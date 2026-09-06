@@ -1,0 +1,97 @@
+name: Check publishing credentials
+
+# 手动触发，发版【之前】跑一次，确认两个平台的凭据还有效、我们声称的版本名
+# 在对方的表里都能对上。
+#
+# 为什么做成一个 workflow 而不是本地脚本：要验证令牌就得用它，而用它的地方
+# 应该是它已经在的地方。令牌全程留在 GitHub，不必为了一次检查把它拷来拷去。
+#
+# 这不是发版流程的一环，release.yml 不依赖它。它治的是另一件事：令牌会过期、
+# 会被吊销、ID 会填错，而那些眼下只会在推了 tag、构建跑完之后才暴露出来 ——
+# 那时 GitHub Release 已经建好了。
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      # 一个都不 echo 令牌本身。curl 走请求头而不是 query string —— 后者会
+      # 出现在日志、代理和对方的访问日志里。
+      - name: Modrinth
+        env:
+          MODRINTH_ID: ${{ vars.MODRINTH_ID }}
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+        run: |
+          if [ -z "$MODRINTH_ID" ] || [ -z "$MODRINTH_TOKEN" ]; then
+            echo "::warning::Modrinth 未配置，跳过"; exit 0
+          fi
+          UA="november521/mcphone (credential check)"
+          USER=$(curl -sS --fail-with-body -H "Authorization: $MODRINTH_TOKEN" -H "User-Agent: $UA" \
+                 https://api.modrinth.com/v2/user | python3 -c 'import sys,json;print(json.load(sys.stdin)["username"])') || {
+            echo "::error::Modrinth 令牌无效或已过期"; exit 1; }
+          echo "令牌有效，账号 $USER"
+          TITLE=$(curl -sS --fail-with-body -H "Authorization: $MODRINTH_TOKEN" -H "User-Agent: $UA" \
+                  "https://api.modrinth.com/v2/project/$MODRINTH_ID" \
+                  | python3 -c 'import sys,json;d=json.load(sys.stdin);print(d["title"],"/",d["slug"],"/",d["status"])') || {
+            echo "::error::MODRINTH_ID=$MODRINTH_ID 取不到项目"; exit 1; }
+          echo "项目 $TITLE"
+
+      - name: CurseForge
+        env:
+          CURSEFORGE_ID: ${{ vars.CURSEFORGE_ID }}
+          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+        run: |
+          # 【令牌与 ID 分开判】。验令牌、查版本表都不需要项目 ID，把两者绑在
+          # 一起判，就会在"令牌配好了、ID 还没填"这个最需要检查的时刻什么都不查。
+          if [ -z "$CURSEFORGE_TOKEN" ]; then
+            echo "::warning::CURSEFORGE_TOKEN 没配，跳过"; exit 0
+          fi
+
+          # 这个接口本身就要令牌，取得到就说明令牌有效。
+          curl -sS --fail-with-body -H "X-Api-Token: $CURSEFORGE_TOKEN" \
+               https://minecraft.curseforge.com/api/game/versions -o versions.json || {
+            echo "::error::CurseForge 令牌无效"; exit 1; }
+          echo "令牌有效，取到 $(python3 -c 'import json;print(len(json.load(open("versions.json"))))') 条版本记录"
+
+          if [ -z "$CURSEFORGE_ID" ]; then
+            echo "::warning::CURSEFORGE_ID 还没填，发版时 CurseForge 那步会跳过"
+          else
+            # 拿 localization/export 当"这个 ID 存不存在"用。
+            #
+            # 【它只验存在，不验归属】—— 这一条是实测出来的，别想当然：
+            #   不存在的 ID   → 400  {"errorCode":1001,"errorMessage":"Invalid `projectID`."}
+            #   我们自己的项目 → 403  "You do not have permission to manage localization"
+            #   别人的项目     → 403  一模一样
+            # 本地化管理这个权限对 Minecraft 项目根本没开，所以谁问都是 403。
+            # 也就是说 403 什么都不能说明，能说明问题的是 400。
+            #
+            # 归属没法在这里验：upload-file 是唯一按归属鉴权的端点，而试它就得
+            # 真传一个文件。所以这一步能挡住的是【ID 填错、填成不存在的号】，
+            # 挡不住"填成了别人的一个真项目"——后者只有第一次实发才会暴露。
+            CODE=$(curl -sS -o cf-project.txt -w '%{http_code}' \
+                   -H "X-Api-Token: $CURSEFORGE_TOKEN" \
+                   "https://minecraft.curseforge.com/api/projects/$CURSEFORGE_ID/localization/export")
+            case "$CODE" in
+              400) echo "::error::CURSEFORGE_ID=$CURSEFORGE_ID 不是有效的项目 ID：$(head -c 200 cf-project.txt)"; exit 1 ;;
+              200|403) echo "项目 $CURSEFORGE_ID 存在" ;;
+              # 别为一个没预料到的状态码把整次检查判失败 —— 这一步是辅助，
+              # 不该比它要验的东西本身还容易出假警报。
+              *) echo "::warning::验 $CURSEFORGE_ID 时拿到状态码 $CODE，无法判断，跳过这一项" ;;
+            esac
+          fi
+
+          # release.yml 里两支分别声称的那几样，逐个确认对方表里有。
+          # 对不上就是发版当场失败的那种错，宁可在这里先看见。
+          python3 - <<'PY'
+          import json, sys
+          vs = json.load(open("versions.json"))
+          names = {v["name"] for v in vs}
+          want = ["1.21.1", "1.20.1", "NeoForge", "Forge", "Java 21", "Java 17"]
+          missing = [w for w in want if w not in names]
+          for w in want:
+              print(f'  {"OK  " if w in names else "缺失"}  {w}')
+          if missing:
+              print(f'::error::CurseForge 版本表里没有：{", ".join(missing)}')
+              sys.exit(1)
+          PY
