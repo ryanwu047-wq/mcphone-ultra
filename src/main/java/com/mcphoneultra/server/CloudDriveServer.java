@@ -2,6 +2,14 @@ package com.mcphoneultra.server;
 
 import com.mcphoneultra.client.net.CloudPackets;
 import net.minecraft.ChatFormatting;
+import net.minecraft.nbt.ByteArrayTag;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.IntArrayTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.LongArrayTag;
+import net.minecraft.nbt.NumericTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
@@ -21,6 +29,8 @@ import java.util.UUID;
 public final class CloudDriveServer {
 
     public static final int PER_PAGE = 45;
+    /** 單格 NBT 大小上限：超過就拒絕存入（防惡意 100 頁書塞爆快照封包／存檔） */
+    public static final long MAX_ITEM_NBT = 256L * 1024;
 
     /** 無會員限速：1 次操作／秒 */
     private static final Map<UUID, Long> lastOps = new HashMap<>();
@@ -49,7 +59,13 @@ public final class CloudDriveServer {
         int end = Math.min((page + 1) * PER_PAGE, slots);
         for (int i = page * PER_PAGE; i < end; i++) {
             ItemStack s = all[i];
-            pageItems.add(s == null ? ItemStack.EMPTY : s);
+            // 防護：舊資料／異常物品 NBT 過大時，快照以空格代替，避免封包爆量
+            if (s != null && !s.isEmpty()
+                    && estimateNbtSize(s.saveOptional(p.serverLevel().registryAccess())) > MAX_ITEM_NBT) {
+                pageItems.add(ItemStack.EMPTY);
+            } else {
+                pageItems.add(s == null ? ItemStack.EMPTY : s);
+            }
         }
         while (pageItems.size() < PER_PAGE) pageItems.add(ItemStack.EMPTY);
         PacketDistributor.sendToPlayer(p, new CloudPackets.CloudSnapshotS2C(
@@ -92,6 +108,11 @@ public final class CloudDriveServer {
         ItemStack hand = p.getOffhandItem();
         if (hand.isEmpty()) {
             msg(p, "請把要存的物品放副手");
+            return;
+        }
+        // 防護：NBT 過大的物品（如 100 頁書）禁止存入，避免快照封包爆量
+        if (estimateNbtSize(hand.saveOptional(p.serverLevel().registryAccess())) > MAX_ITEM_NBT) {
+            msg(p, "物品太大（含大量 NBT），無法存入網盤");
             return;
         }
         ItemStack[] all = d.slotsOf(p);
@@ -225,6 +246,29 @@ public final class CloudDriveServer {
             }
         }
         return give.getCount() - n;
+    }
+
+    /** 估算 NBT 大小（位元組），用於限制異常大物品存入網盤。 */
+    private static long estimateNbtSize(Tag tag) {
+        if (tag == null) return 0;
+        if (tag instanceof CompoundTag c) {
+            long size = 3;
+            for (String k : c.getAllKeys()) {
+                size += k.length() * 2L + 3 + estimateNbtSize(c.get(k));
+            }
+            return size;
+        }
+        if (tag instanceof ListTag l) {
+            long size = 5;
+            for (Tag t : l) size += estimateNbtSize(t);
+            return size;
+        }
+        if (tag instanceof StringTag s) return s.getAsString().length() * 2L + 4;
+        if (tag instanceof NumericTag) return 9;
+        if (tag instanceof ByteArrayTag b) return b.getAsByteArray().length + 5L;
+        if (tag instanceof IntArrayTag i) return i.getAsIntArray().length * 4L + 5;
+        if (tag instanceof LongArrayTag l) return l.getAsLongArray().length * 8L + 5;
+        return 16;
     }
 
     private static void msg(ServerPlayer p, String s) {

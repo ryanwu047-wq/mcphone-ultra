@@ -76,7 +76,7 @@ public final class EmulatorApp extends BaseApp {
         private static boolean isRomFile(String name) {
             String n = name.toLowerCase(Locale.ROOT);
             return n.endsWith(".nes") || n.endsWith(".gb") || n.endsWith(".gbc")
-                    || n.endsWith(".gba") || n.endsWith(".zip") || n.endsWith(".7z")
+                    || n.endsWith(".gba") || n.endsWith(".zip")
                     || n.endsWith(".bin");
         }
 
@@ -128,6 +128,9 @@ public final class EmulatorApp extends BaseApp {
                     }
                     return null;
                 }
+                // 直接讀 ROM 檔：限制大小防 OOM（GBA 最大約 32MB，給 64MB 餘量）
+                long size = Files.size(p);
+                if (size > 64L * 1024 * 1024) return null;
                 return Files.readAllBytes(p);
             } catch (IOException e) {
                 return null;

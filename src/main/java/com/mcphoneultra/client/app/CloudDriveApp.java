@@ -10,6 +10,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * ☁️ 網盤：比末影箱大得多的空間，商店下載。
@@ -36,10 +37,12 @@ public final class CloudDriveApp extends BaseApp {
         private static volatile int snapTier;
         private static volatile long snapRemaining;
         private static volatile int snapPage;
-        private static volatile ItemStack[] snapSlots = new ItemStack[0];
+        /** 快照格資料：主線程寫入／讀取，AtomicReference 保證陣列引用原子交換 */
+        private static final AtomicReference<ItemStack[]> SNAP_SLOTS = new AtomicReference<>(new ItemStack[0]);
 
         private int selected = -1;          // 全網盤索引
         private boolean upgrading;
+        private static volatile boolean purchasePending; // 升級請求已送出，等快照回應（防連點）
         private String toast = "";
         private long toastUntil;
 
@@ -49,7 +52,8 @@ public final class CloudDriveApp extends BaseApp {
             snapPage = pkt.page();
             ItemStack[] arr = new ItemStack[pkt.slots().size()];
             for (int i = 0; i < arr.length; i++) arr[i] = pkt.slots().get(i);
-            snapSlots = arr;
+            SNAP_SLOTS.set(arr);
+            purchasePending = false; // 服務端已回應（快照），解除防連點
         }
 
         private void toast(String s) {
@@ -105,6 +109,7 @@ public final class CloudDriveApp extends BaseApp {
             Ui.buttonLabel(c, x + w - 36, py, 30, 10, "▶", snapPage < pages - 1);
 
             // 網格 9×5，每格 28
+            ItemStack[] slots = SNAP_SLOTS.get();
             int cell = 28;
             int gx0 = x + (w - 9 * cell) / 2;
             int gy0 = y + 26;
@@ -121,7 +126,7 @@ public final class CloudDriveApp extends BaseApp {
                             sel ? 0xFF3A5A8A : 0xFF1A1F26);
                     Ui.border(c, gx + 1, gy + 1, cell - 2, cell - 2,
                             sel ? s.accentColor() : s.buttonDisabledColor());
-                    ItemStack st = idx < snapSlots.length ? snapSlots[idx] : ItemStack.EMPTY;
+                    ItemStack st = idx < slots.length ? slots[idx] : ItemStack.EMPTY;
                     if (st != null && !st.isEmpty()) {
                         g.renderItem(st, gx + 6, gy + 6);
                         g.renderItemDecorations(c.font(), st, gx + 6, gy + 6);
@@ -164,7 +169,8 @@ public final class CloudDriveApp extends BaseApp {
 
         private ItemStack selectedSlot() {
             int idx = selected - snapPage * 45;
-            if (idx >= 0 && idx < snapSlots.length) return snapSlots[idx];
+            ItemStack[] slots = SNAP_SLOTS.get();
+            if (idx >= 0 && idx < slots.length) return slots[idx];
             return ItemStack.EMPTY;
         }
 
@@ -201,16 +207,16 @@ public final class CloudDriveApp extends BaseApp {
                         s.bodyColor(), x, ry, 40, rowH);
                 Ui.textClipped(c, t == CloudTier.NONE ? "免費基礎" : t.priceLabel(),
                         x + 158, ry + 2, s.subtleColor(), x, ry, 60, rowH);
-                if (t != CloudTier.NONE && clickOn(x + w - 58, ry, 54, rowH - 2)
-                        && t.order > cur.order) {
+                boolean canBuy = t != CloudTier.NONE && t.order > cur.order && !purchasePending;
+                if (canBuy && clickOn(x + w - 58, ry, 54, rowH - 2)) {
+                    purchasePending = true; // 防連點：收到快照回應後自動解除
                     PacketDistributor.sendToServer(new CloudPackets.CloudUpgradeC2S(t.ordinal()));
                     toast("已請求購買 " + t.label);
                 }
                 Ui.button(c, x + w - 58, ry, 54, rowH - 2,
-                        t != CloudTier.NONE && t.order > cur.order,
-                        c.hovered(x + w - 58, ry, 54, rowH - 2));
+                        canBuy, c.hovered(x + w - 58, ry, 54, rowH - 2));
                 Ui.buttonLabel(c, x + w - 58, ry, 54, rowH - 2,
-                        isCur ? "已擁有" : "購買", t.order > cur.order);
+                        isCur ? "已擁有" : "購買", canBuy);
             }
             Ui.drawCentered(c, "熔爐加速 VIP 2× SVIP 4×｜附魔台書架 VIP1=5 VIP2=10 VIP3+=15",
                     x, y + h - 12, w, 12, s.subtleColor());
