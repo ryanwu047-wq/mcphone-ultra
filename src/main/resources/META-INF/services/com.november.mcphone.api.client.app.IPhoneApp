@@ -16,7 +16,6 @@ com.mcphoneultra.client.app.FileManagerApp
 com.mcphoneultra.client.app.VideoStudioApp
 com.mcphoneultra.client.app.CodeJsApp
 com.mcphoneultra.client.app.PythonApp
-com.mcphoneultra.client.app.TermuxApp
 com.mcphoneultra.client.app.BilibiliApp
 com.mcphoneultra.client.app.YoutubeApp
 com.mcphoneultra.client.app.WebBrowserApp

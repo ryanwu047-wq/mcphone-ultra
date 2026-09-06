@@ -263,8 +263,6 @@
     "mcphone_ultra.app.codejs.desc":  "Run JavaScript",
     "mcphone_ultra.app.python":  "Python",
     "mcphone_ultra.app.python.desc":  "Run Python",
-    "mcphone_ultra.app.termux":  "Termux",
-    "mcphone_ultra.app.termux.desc":  "Command line terminal",
     "mcphone_ultra.app.bilibili":  "Bilibili",
     "mcphone_ultra.app.bilibili.desc":  "Search and play Bilibili",
     "mcphone_ultra.app.youtube":  "YouTube",

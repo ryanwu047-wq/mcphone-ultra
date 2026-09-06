@@ -263,8 +263,6 @@
     "mcphone_ultra.app.codejs.desc":  "JavaScript 直譯執行",
     "mcphone_ultra.app.python":  "Python 編程",
     "mcphone_ultra.app.python.desc":  "Python 直譯執行",
-    "mcphone_ultra.app.termux":  "Termux",
-    "mcphone_ultra.app.termux.desc":  "命令列終端",
     "mcphone_ultra.app.bilibili":  "Bilibili",
     "mcphone_ultra.app.bilibili.desc":  "B 站影片搜尋播放",
     "mcphone_ultra.app.youtube":  "YouTube",

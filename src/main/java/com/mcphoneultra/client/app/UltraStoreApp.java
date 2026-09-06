@@ -37,7 +37,6 @@ public final class UltraStoreApp extends BaseApp {
                 { "影片工作室", "影片剪輯與觀看" },
                 { "JS 編程", "JavaScript 直譯執行" },
                 { "Python 編程", "Python 直譯執行" },
-                { "Termux", "命令列終端" },
                 { "Bilibili", "B 站影片" },
                 { "YouTube", "YouTube 影片" },
                 { "網頁瀏覽器", "文字瀏覽 + 系統開啟" },
