@@ -11,7 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Optional;
 
-/** 极简 HTTP 客户端：带超时、浏览器 UA 与【响应大小上限】。 */
+/** 极简 HTTP 客户端：带超时、浏览器 UA、响应大小上限，与 shell 注入防护的 openExternal。 */
 public final class Http {
 
     private static final String UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -100,8 +100,15 @@ public final class Http {
         return out.toByteArray();
     }
 
-    /** 在系统浏览器打开链接（桌面环境）。 */
+    /**
+     * 在系统浏览器打开链接（桌面环境）。
+     * 只放行 http/https/file 開頭、且不含 shell 特殊字符的 URL——
+     * cmd /c start 會解析 & | < > ^ % 等字符，玩家可控字串必須先過濾，防命令注入。
+     */
     public static boolean openExternal(String url) {
+        if (url == null || !isSafeExternal(url)) {
+            return false;
+        }
         try {
             if (java.awt.Desktop.isDesktopSupported()) {
                 java.awt.Desktop.getDesktop().browse(URI.create(url));
@@ -115,5 +122,21 @@ public final class Http {
         } catch (Exception ignored) {
         }
         return false;
+    }
+
+    /** 白名單校驗：協議正確 + 無 cmd 特殊字符/空白/控制字符 */
+    private static boolean isSafeExternal(String url) {
+        if (!url.startsWith("https://") && !url.startsWith("http://")
+                && !url.startsWith("file://")) {
+            return false;
+        }
+        for (int i = 0; i < url.length(); i++) {
+            char c = url.charAt(i);
+            if (c < 0x20 || c == '&' || c == '|' || c == '<' || c == '>'
+                    || c == '^' || c == '%' || c == '"' || c == ' ' || c == '\'') {
+                return false;
+            }
+        }
+        return true;
     }
 }
