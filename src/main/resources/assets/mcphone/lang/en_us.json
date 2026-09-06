@@ -304,6 +304,7 @@
     "mcphone_ultra.settings.color_blind":  "Color Blind",
     "mcphone_ultra.app.villager":  "村民聯絡人",
     "mcphone_ultra.app.villager.desc":  "蹲下+右鍵綁定村民，遠程交易與升級",
+    "mcphone_ultra.villager.no_offers": "This villager has no trades",
     "mcphone_ultra.villager.gone":  "村民已離開或不在線",
     "mcphone_ultra.app.cloud":  "網盤",
     "mcphone_ultra.app.cloud.desc":  "超大空間雲存儲，會員升級容量與堆疊上限",

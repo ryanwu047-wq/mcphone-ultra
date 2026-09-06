@@ -137,12 +137,12 @@ public final class AlarmApp extends BaseApp {
             // 新增區
             Ui.text(c, "時間 HH:MM", x + 4, y + 14, s.subtleColor());
             if (clickOn(x + 4, y + 24, 52, 11)) typingTime = true;
-            Ui.fill(g, x + 4, y + 24, x + 56, y + 35, 0xFF000000);
+            Ui.fill(g, x + 4, y + 24, 52, 11, 0xFF000000);
             Ui.textClipped(c, (input.isEmpty() ? "07:00" : input), x + 6, y + 25,
                     s.accentColor(), x, y + 24, 52, 11);
             Ui.text(c, "標籤", x + 62, y + 14, s.subtleColor());
             if (clickOn(x + 62, y + 24, 52, 11)) typingLabel = true;
-            Ui.fill(g, x + 62, y + 24, x + 114, y + 35, 0xFF000000);
+            Ui.fill(g, x + 62, y + 24, 52, 11, 0xFF000000);
             Ui.textClipped(c, (inputLabel.isEmpty() ? "起床" : inputLabel), x + 64, y + 25,
                     s.accentColor(), x, y + 24, 52, 11);
             if (clickOn(x + 118, y + 24, 30, 11)) {
@@ -168,7 +168,7 @@ public final class AlarmApp extends BaseApp {
                 Alarm a = list.get(i);
                 int ry = listY + i * rowH;
                 if (ry + rowH > listY + listH) break;
-                Ui.fill(g, x + 2, ry, x + w - 2, ry + rowH - 1,
+                Ui.fill(g, x + 2, ry, w - 4, rowH - 1,
                         a.enabled ? 0xFF1E2A3A : 0xFF161B22);
                 Ui.hline(g, x + 2, x + w - 2, ry + rowH - 1, s.buttonDisabledColor());
                 Ui.textClipped(c, a.time.format(DateTimeFormatter.ofPattern("HH:mm"))

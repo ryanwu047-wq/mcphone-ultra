@@ -1,6 +1,7 @@
 package com.mcphoneultra.client.app;
 
 import com.mcphoneultra.client.net.CloudPackets;
+import com.mcphoneultra.client.ui.Scroller;
 import com.mcphoneultra.client.ui.Ui;
 import com.mcphoneultra.server.CloudTier;
 import com.november.mcphone.api.client.ui.IPhonePage;
@@ -40,6 +41,7 @@ public final class CloudDriveApp extends BaseApp {
         /** 快照格資料：主線程寫入／讀取，AtomicReference 保證陣列引用原子交換 */
         private static final AtomicReference<ItemStack[]> SNAP_SLOTS = new AtomicReference<>(new ItemStack[0]);
 
+        private final Scroller upScroller = new Scroller();
         private int selected = -1;          // 全網盤索引
         private boolean upgrading;
         private static volatile boolean purchasePending; // 升級請求已送出，等快照回應（防連點）
@@ -84,8 +86,8 @@ public final class CloudDriveApp extends BaseApp {
 
             CloudTier tier = tier();
             // 標題列
-            Ui.textClipped(c, "☁️ 網盤 " + tier.label, x + 3, y + 2, s.titleColor(), x, y, 92, 12);
-            Ui.textClipped(c, timeLeft(snapRemaining), x + 95, y + 2, s.subtleColor(), x, y, w - 132, 12);
+            Ui.textClipped(c, "☁️ 網盤 " + tier.label + "  " + timeLeft(snapRemaining),
+                    x + 3, y + 2, s.titleColor(), x, y, w - 38, 12);
             if (clickOn(x + w - 34, y + 1, 31, 10)) {
                 upgrading = true;
             }
@@ -94,7 +96,7 @@ public final class CloudDriveApp extends BaseApp {
             Ui.hline(g, x, x + w, y + 11, s.buttonDisabledColor());
 
             // 翻頁
-            int pages = Math.max(1, (tier.slots() + 44) / 45);
+            int pages = Math.max(1, (tier.slots() + 29) / 30);
             int py = y + 12;
             if (clickOn(x + 6, py, 30, 10) && snapPage > 0) {
                 PacketDistributor.sendToServer(new CloudPackets.CloudPageC2S(snapPage - 1));
@@ -108,28 +110,28 @@ public final class CloudDriveApp extends BaseApp {
             Ui.button(c, x + w - 36, py, 30, 10, snapPage < pages - 1, c.hovered(x + w - 36, py, 30, 10));
             Ui.buttonLabel(c, x + w - 36, py, 30, 10, "▶", snapPage < pages - 1);
 
-            // 網格 9×5，每格 28
+            // 網格 5×6，每格 20px（手機 120 寬放 5 格，平板更寬自動放大）
             ItemStack[] slots = SNAP_SLOTS.get();
-            int cell = 28;
-            int gx0 = x + (w - 9 * cell) / 2;
-            int gy0 = y + 26;
-            for (int r = 0; r < 5; r++) {
-                for (int col = 0; col < 9; col++) {
-                    int idx = r * 9 + col;
-                    if (idx >= 45) break;
-                    int global = snapPage * 45 + idx;
+            int cell = Math.min(28, (w - 8) / 5);
+            int gx0 = x + (w - 5 * cell) / 2;
+            int gy0 = y + 24;
+            for (int r = 0; r < 6; r++) {
+                for (int col = 0; col < 5; col++) {
+                    int idx = r * 5 + col;
+                    if (idx >= 30) break;
+                    int global = snapPage * 30 + idx;
                     if (global >= tier.slots()) break;
                     int gx = gx0 + col * cell;
                     int gy = gy0 + r * cell;
                     boolean sel = selected == global;
-                    Ui.fill(g, gx + 1, gy + 1, gx + cell - 1, gy + cell - 1,
+                    Ui.fill(g, gx + 1, gy + 1, cell - 2, cell - 2,
                             sel ? 0xFF3A5A8A : 0xFF1A1F26);
                     Ui.border(c, gx + 1, gy + 1, cell - 2, cell - 2,
                             sel ? s.accentColor() : s.buttonDisabledColor());
                     ItemStack st = idx < slots.length ? slots[idx] : ItemStack.EMPTY;
                     if (st != null && !st.isEmpty()) {
-                        g.renderItem(st, gx + 6, gy + 6);
-                        g.renderItemDecorations(c.font(), st, gx + 6, gy + 6);
+                        g.renderItem(st, gx + 4, gy + 4);
+                        g.renderItemDecorations(c.font(), st, gx + 4, gy + 4);
                     }
                     if (clickOn(gx + 1, gy + 1, cell - 2, cell - 2)) {
                         selected = global;
@@ -146,7 +148,7 @@ public final class CloudDriveApp extends BaseApp {
                     Ui.textClipped(c, itemName(st) + " ×" + st.getCount(),
                             x + 3, by + 3, s.titleColor(), x, by, w, 12);
                 } else {
-                    Ui.text(c, "空格（副手物品可存入）", x + 3, by + 3, s.subtleColor());
+                    Ui.textClipped(c, "空格（副手物品可存入）", x + 3, by + 3, s.subtleColor(), x, by, w - 84, 12);
                 }
                 if (clickOn(x + w - 78, by, 36, 12)) {
                     PacketDistributor.sendToServer(new CloudPackets.CloudTakeC2S(selected));
@@ -159,7 +161,7 @@ public final class CloudDriveApp extends BaseApp {
                 Ui.button(c, x + w - 40, by, 36, 12, true, c.hovered(x + w - 40, by, 36, 12));
                 Ui.buttonLabel(c, x + w - 40, by, 36, 12, "存入", true);
             } else {
-                Ui.text(c, "點格子選中，再取出／存入", x + 3, by + 3, s.subtleColor());
+                Ui.textClipped(c, "點格子選中，再取出／存入", x + 3, by + 3, s.subtleColor(), x, by, w - 84, 12);
             }
 
             if (System.currentTimeMillis() < toastUntil && !toast.isEmpty()) {
@@ -167,8 +169,17 @@ public final class CloudDriveApp extends BaseApp {
             }
         }
 
+        @Override
+        public boolean mouseScrolled(double mx, double my, double amount) {
+            if (upgrading) {
+                upScroller.onWheel(amount, CloudTier.values().length * 22, 130);
+                return true;
+            }
+            return false;
+        }
+
         private ItemStack selectedSlot() {
-            int idx = selected - snapPage * 45;
+            int idx = selected - snapPage * 30;
             ItemStack[] slots = SNAP_SLOTS.get();
             if (idx >= 0 && idx < slots.length) return slots[idx];
             return ItemStack.EMPTY;
@@ -187,35 +198,34 @@ public final class CloudDriveApp extends BaseApp {
             Ui.hline(g, x, x + w, y + 11, s.buttonDisabledColor());
 
             int listY = y + 14;
-            int rowH = 20;
+            int rowH = 22;
+            int listH = h - 14 - 14;
             CloudTier cur = tier();
-            int off = 0;
+            upScroller.clamp(CloudTier.values().length * rowH, listH);
+            int off = (int) upScroller.offset();
             for (int i = 0; i < CloudTier.values().length; i++) {
                 CloudTier t = CloudTier.values()[i];
                 int ry = listY + i * rowH - off;
                 if (ry + rowH > y + h) break;
                 if (ry < listY) continue;
                 boolean isCur = t.order <= cur.order;
-                Ui.fill(g, x + 2, ry, x + w - 2, ry + rowH - 1,
+                Ui.fill(g, x + 2, ry, w - 4, rowH - 1,
                         isCur ? 0xFF1E3A2A : 0xFF161B22);
                 Ui.hline(g, x + 2, x + w - 2, ry + rowH - 1, s.buttonDisabledColor());
-                Ui.textClipped(c, t.label, x + 5, ry + 2, isCur ? s.accentColor() : s.titleColor(),
-                        x, ry, 40, rowH);
-                Ui.textClipped(c, t.boxes + " 箱 " + (t.boxes * 54) + "格", x + 48, ry + 2,
-                        s.bodyColor(), x, ry, 70, rowH);
-                Ui.textClipped(c, "疊" + t.stackLimit, x + 118, ry + 2,
-                        s.bodyColor(), x, ry, 40, rowH);
-                Ui.textClipped(c, t == CloudTier.NONE ? "免費基礎" : t.priceLabel(),
-                        x + 158, ry + 2, s.subtleColor(), x, ry, 60, rowH);
+                Ui.textClipped(c, t.label + (isCur ? " ✓" : ""),
+                        x + 5, ry + 1, isCur ? s.accentColor() : s.titleColor(), x, ry, w - 62, rowH);
+                Ui.textClipped(c, t.boxes + " 大箱（" + (t.boxes * 54) + " 格）  疊 " + t.stackLimit
+                        + (t == CloudTier.NONE ? "  免費基礎" : "  " + t.priceLabel()),
+                        x + 5, ry + 11, s.bodyColor(), x, ry, w - 62, rowH);
                 boolean canBuy = t != CloudTier.NONE && t.order > cur.order && !purchasePending;
-                if (canBuy && clickOn(x + w - 58, ry, 54, rowH - 2)) {
+                if (canBuy && clickOn(x + w - 58, ry + 1, 54, rowH - 2)) {
                     purchasePending = true; // 防連點：收到快照回應後自動解除
                     PacketDistributor.sendToServer(new CloudPackets.CloudUpgradeC2S(t.ordinal()));
                     toast("已請求購買 " + t.label);
                 }
-                Ui.button(c, x + w - 58, ry, 54, rowH - 2,
-                        canBuy, c.hovered(x + w - 58, ry, 54, rowH - 2));
-                Ui.buttonLabel(c, x + w - 58, ry, 54, rowH - 2,
+                Ui.button(c, x + w - 58, ry + 1, 54, rowH - 2,
+                        canBuy, c.hovered(x + w - 58, ry + 1, 54, rowH - 2));
+                Ui.buttonLabel(c, x + w - 58, ry + 1, 54, rowH - 2,
                         isCur ? "已擁有" : "購買", canBuy);
             }
             Ui.drawCentered(c, "熔爐加速 VIP 2× SVIP 4×｜附魔台書架 VIP1=5 VIP2=10 VIP3+=15",

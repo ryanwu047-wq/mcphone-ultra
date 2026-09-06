@@ -55,35 +55,35 @@ public final class CompassApp extends BaseApp {
                 return;
             }
 
-            // 羅盤盤面
+            // 羅盤盤面（r=30 保證 120 寬手機內不溢出）
             int cx = x + w / 2;
-            int cy = y + 40;
-            int r = 40;
+            int cy = y + 38;
+            int r = 30;
             Ui.circle(g, cx, cy, r, 0xFF1A1F26);
             Ui.circle(g, cx, cy, r, s.accentColor());
             float yaw = p.getYRot();
             double rad = Math.toRadians(yaw);
-            int nx = (int) (cx + Math.sin(rad) * (r - 8));
-            int nz = (int) (cy - Math.cos(rad) * (r - 8));
+            int nx = (int) (cx + Math.sin(rad) * (r - 7));
+            int nz = (int) (cy - Math.cos(rad) * (r - 7));
             Ui.hline(g, cx - 2, cx + 2, cy - r + 6, 0xFFAA0000);
-            Ui.fill(g, cx - 2, cy - r + 3, cx + 2, cy - r + 8, 0xFFFF3B30);
+            Ui.fill(g, cx - 2, cy - r + 3, 4, 5, 0xFFFF3B30);
             drawLine(g, cx, cy, nx, nz, s.titleColor());
-            Ui.drawCentered(c, "N", cx - 4, cy - r - 2, 8, 10, 0xFFFF3B30);
+            Ui.drawCentered(c, "N", cx - 4, cy - r + 4, 8, 10, 0xFFFF3B30);
 
-            // 資訊
+            // 資訊（全部截斷，120 寬不溢出）
             int iy = cy + r + 12;
-            Ui.text(c, "座標  X " + (int) p.getX() + "  Y " + (int) p.getY() + "  Z " + (int) p.getZ(),
-                    x + 8, iy, s.titleColor());
-            Ui.text(c, "朝向  " + facing(yaw), x + 8, iy + 11, s.bodyColor());
+            Ui.textClipped(c, "座標 X " + (int) p.getX() + "  Y " + (int) p.getY() + "  Z " + (int) p.getZ(),
+                    x + 8, iy, s.titleColor(), x, y, w, 12);
+            Ui.textClipped(c, "朝向  " + facing(yaw), x + 8, iy + 11, s.bodyColor(), x, y, w, 12);
             if (!Double.isNaN(homeX)) {
                 double dx = homeX - p.getX();
                 double dz = homeZ - p.getZ();
                 double dist = Math.sqrt(dx * dx + dz * dz);
                 double angle = Math.toDegrees(Math.atan2(dx, dz));
-                Ui.text(c, "家   距離 " + (int) dist + "m  " + cardinal(angle),
-                        x + 8, iy + 22, s.accentColor());
+                Ui.textClipped(c, "家 距離 " + (int) dist + "m  " + cardinal(angle),
+                        x + 8, iy + 22, s.accentColor(), x, y, w, 12);
             } else {
-                Ui.text(c, "家   未設定（按「設家」）", x + 8, iy + 22, s.subtleColor());
+                Ui.textClipped(c, "家 未設定（按「設家」）", x + 8, iy + 22, s.subtleColor(), x, y, w, 12);
             }
 
             if (System.currentTimeMillis() < toastUntil && !toast.isEmpty()) {
@@ -96,7 +96,7 @@ public final class CompassApp extends BaseApp {
             int sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
             int err = dx - dy;
             while (true) {
-                Ui.fill(g, x0, y0, x0 + 1, y0 + 1, color);
+                Ui.fill(g, x0, y0, 1, 1, color);
                 if (x0 == x1 && y0 == y1) break;
                 int e2 = 2 * err;
                 if (e2 > -dy) {

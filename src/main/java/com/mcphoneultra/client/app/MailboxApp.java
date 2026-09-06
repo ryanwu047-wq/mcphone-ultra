@@ -111,7 +111,7 @@ public final class MailboxApp extends BaseApp {
                 var m = shown.get(i);
                 int ry = listY + i * rowH;
                 if (ry + rowH > listY + listH) break;
-                Ui.fill(g, x + 2, ry, x + w - 2, ry + rowH - 1,
+                Ui.fill(g, x + 2, ry, w - 4, rowH - 1,
                         m.claimed() ? 0xFF161B22 : 0xFF1E2A3A);
                 Ui.hline(g, x + 2, x + w - 2, ry + rowH - 1, s.buttonDisabledColor());
                 String att = m.attachments().isEmpty() ? "" : " 📎" + m.attachments().size();
@@ -159,13 +159,13 @@ public final class MailboxApp extends BaseApp {
 
             Ui.text(c, "收件人（線上玩家名）", x + 4, y + 16, s.subtleColor());
             if (clickOn(x + 4, y + 26, w - 8, 12)) typingTo = true;
-            Ui.fill(g, x + 4, y + 26, x + w - 4, y + 38, 0xFF000000);
+            Ui.fill(g, x + 4, y + 26, w - 8, 12, 0xFF000000);
             Ui.textClipped(c, toName.isEmpty() ? "（點這裡輸入名字）" : toName,
                     x + 6, y + 27, s.accentColor(), x, y + 26, w - 8, 12);
 
             Ui.text(c, "訊息", x + 4, y + 42, s.subtleColor());
             if (clickOn(x + 4, y + 52, w - 8, 12)) typingMsg = true;
-            Ui.fill(g, x + 4, y + 52, x + w - 4, y + 64, 0xFF000000);
+            Ui.fill(g, x + 4, y + 52, w - 8, 12, 0xFF000000);
             Ui.textClipped(c, message.isEmpty() ? "（點這裡輸入訊息）" : message,
                     x + 6, y + 53, s.accentColor(), x, y + 52, w - 8, 12);
 

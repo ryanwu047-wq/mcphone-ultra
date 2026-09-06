@@ -52,7 +52,7 @@ public final class PhoneApp extends BaseApp {
 
             Ui.text(c, "對方玩家名", x + 4, y + 44, s.subtleColor());
             if (clickOn(x + 4, y + 54, w - 8, 12)) typing = true;
-            Ui.fill(g, x + 4, y + 54, x + w - 4, y + 66, 0xFF000000);
+            Ui.fill(g, x + 4, y + 54, w - 8, 12, 0xFF000000);
             Ui.textClipped(c, target.isEmpty() ? "（點這裡輸入）" : target,
                     x + 6, y + 55, s.accentColor(), x, y + 54, w - 8, 12);
 

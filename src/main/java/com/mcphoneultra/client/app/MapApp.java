@@ -148,11 +148,11 @@ public final class MapApp extends BaseApp {
             if (navMode) {
                 Ui.text(c, "目標 X", x + 2, mapY + 1, s.subtleColor());
                 if (clickOn(x + 2, mapY + 10, 36, 11)) typingX = true;
-                Ui.fill(g, x + 2, mapY + 10, x + 38, mapY + 21, 0xFF000000);
+                Ui.fill(g, x + 2, mapY + 10, 36, 11, 0xFF000000);
                 Ui.textClipped(c, inputX.isEmpty() ? "0" : inputX, x + 4, mapY + 11, s.accentColor(), x, mapY + 10, 36, 11);
                 Ui.text(c, "Z", x + 42, mapY + 1, s.subtleColor());
                 if (clickOn(x + 42, mapY + 10, 36, 11)) typingZ = true;
-                Ui.fill(g, x + 42, mapY + 10, x + 78, mapY + 21, 0xFF000000);
+                Ui.fill(g, x + 42, mapY + 10, 36, 11, 0xFF000000);
                 Ui.textClipped(c, inputZ.isEmpty() ? "0" : inputZ, x + 44, mapY + 11, s.accentColor(), x, mapY + 10, 36, 11);
                 if (clickOn(x + 82, mapY + 10, 36, 11)) {
                     try {
@@ -182,9 +182,9 @@ public final class MapApp extends BaseApp {
                     ExploreMap.Cell cell = cells.get(((long) (px + dxc) << 32) | ((pz + dzc) & 0xFFFFFFFFL));
                     int sx = pcx + dxc * scale, sy = pcy + dzc * scale;
                     if (cell != null) {
-                        Ui.fill(g, sx, sy, sx + scale, sy + scale, cell.color);
+                        Ui.fill(g, sx, sy, scale, scale, cell.color);
                     } else {
-                        Ui.fill(g, sx, sy, sx + scale, sy + scale, 0xFF141414);
+                        Ui.fill(g, sx, sy, scale, scale, 0xFF141414);
                     }
                 }
             }
@@ -204,11 +204,11 @@ public final class MapApp extends BaseApp {
             if (!Double.isNaN(homeX)) {
                 int hx = pcx + (int) (Math.floor(homeX / 16) - px) * scale + scale / 2;
                 int hz = pcy + (int) (Math.floor(homeZ / 16) - pz) * scale + scale / 2;
-                Ui.fill(g, hx - 1, hz - 1, hx + 2, hz + 2, 0xFFFF4040);
+                Ui.fill(g, hx - 1, hz - 1, 3, 3, 0xFFFF4040);
             }
 
             // 玩家（白點）
-            Ui.fill(g, pcx - 1, pcy - 1, pcx + 2, pcy + 2, 0xFFFFFFFF);
+            Ui.fill(g, pcx - 1, pcy - 1, 3, 3, 0xFFFFFFFF);
 
             // 底部資訊
             String info = "X " + (int) mc.player.getX() + " Z " + (int) mc.player.getZ();
@@ -233,7 +233,7 @@ public final class MapApp extends BaseApp {
             int dy = -Math.abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
             int err = dx + dy;
             while (true) {
-                if (x0 >= 0 && y0 >= 0) Ui.fill(g, x0, y0, x0 + 1, y0 + 1, color);
+                if (x0 >= 0 && y0 >= 0) Ui.fill(g, x0, y0, 1, 1, color);
                 if (x0 == x1 && y0 == y1) break;
                 int e2 = 2 * err;
                 if (e2 >= dy) {

@@ -28,7 +28,7 @@ import java.util.UUID;
 /** 網盤服務端邏輯：快照、存取、升級、限速、開隨身菜單。 */
 public final class CloudDriveServer {
 
-    public static final int PER_PAGE = 45;
+    public static final int PER_PAGE = 30;
     /** 單格 NBT 大小上限：超過就拒絕存入（防惡意 100 頁書塞爆快照封包／存檔） */
     public static final long MAX_ITEM_NBT = 256L * 1024;
 

@@ -63,50 +63,46 @@ public final class VillagerTradeApp extends BaseApp {
                 return;
             }
 
-            int rowH = 34;
+            int rowH = 32;
             int listY = y + 13;
             int listH = h - 13 - 18;
             scroller.clamp(list.size() * rowH, listH);
             int off = (int) scroller.offset();
+            int bx = x + w - 58;   // 右側按鈕列
+            int textW = w - 64;    // 文字區寬（留按鈕＋邊距），手機 120 寬下不溢出
             for (int i = 0; i < list.size(); i++) {
                 VillagerData.Bound b = list.get(i);
                 int ry = listY + i * rowH - off;
                 if (ry + rowH < listY || ry > listY + listH) continue;
 
-                // 氣泡背景
-                Ui.fill(g, x + 2, ry + 1, x + w - 2, ry + rowH - 1, s.pressedOverlay());
+                Ui.fill(g, x + 2, ry + 1, w - 4, rowH - 2, s.pressedOverlay());
                 Ui.hline(g, x + 2, x + w - 2, ry + rowH - 1, s.buttonDisabledColor());
 
-                // 名字 + 職業
-                Ui.textClipped(c, "👤 " + b.name(), x + 5, ry + 2, s.titleColor(), x, ry, w - 70, rowH);
-                Ui.text(c, "★" + b.level() + "  " + profession(b), x + 5, ry + 13, s.bodyColor());
-                Ui.textClipped(c, "📍 " + b.pos(), x + 5, ry + 23, s.subtleColor(), x, ry, w - 70, rowH);
-
-                // 距離（村民在附近時）
+                // 名字＋等級
+                Ui.textClipped(c, "👤 " + b.name() + "  ★" + b.level(),
+                        x + 5, ry + 2, s.titleColor(), x, ry, textW, rowH);
+                // 職業
+                Ui.textClipped(c, profession(b), x + 5, ry + 12, s.bodyColor(), x, ry, textW, rowH);
+                // 座標＋附近距離（同一行，避免重疊）
                 int dist = distTo(b);
-                if (dist >= 0) {
-                    Ui.textClipped(c, "附近 " + dist + "m", x + 5, ry + 23, s.accentColor(), x, ry, 60, rowH);
-                }
+                String posLine = "📍 " + b.pos() + (dist >= 0 ? "  附近" + dist + "m" : "");
+                Ui.textClipped(c, posLine, x + 5, ry + 22,
+                        dist >= 0 ? s.accentColor() : s.subtleColor(), x, ry, textW, rowH);
 
-                // 三個按鈕：交易 / 更新 / 解綁
-                int bx = x + w - 60;
-                if (clickOn(bx, ry + 2, 56, 9)) {
-                    trade(b);
-                }
-                Ui.button(c, bx, ry + 2, 56, 9, true, c.hovered(bx, ry + 2, 56, 9));
-                Ui.buttonLabel(c, bx, ry + 2, 56, 9, "💼 交易", true);
-                if (clickOn(bx, ry + 13, 27, 9)) {
-                    refresh(b);
-                }
-                Ui.button(c, bx, ry + 13, 27, 9, true, c.hovered(bx, ry + 13, 27, 9));
-                Ui.buttonLabel(c, bx, ry + 13, 27, 9, "🔄", true);
-                if (clickOn(bx + 29, ry + 13, 27, 9)) {
+                // 按鈕：交易 / 更新 / 解綁
+                if (clickOn(bx, ry + 1, 54, 9)) trade(b);
+                Ui.button(c, bx, ry + 1, 54, 9, true, c.hovered(bx, ry + 1, 54, 9));
+                Ui.buttonLabel(c, bx, ry + 1, 54, 9, "💼 交易", true);
+                if (clickOn(bx, ry + 12, 26, 8)) refresh(b);
+                Ui.button(c, bx, ry + 12, 26, 8, true, c.hovered(bx, ry + 12, 26, 8));
+                Ui.buttonLabel(c, bx, ry + 12, 26, 8, "🔄", true);
+                if (clickOn(bx + 28, ry + 12, 26, 8)) {
                     VillagerData.unbind(b.uuid());
                     toast("已解綁");
                     reload();
                 }
-                Ui.button(c, bx + 29, ry + 13, 27, 9, true, c.hovered(bx + 29, ry + 13, 27, 9));
-                Ui.buttonLabel(c, bx + 29, ry + 13, 27, 9, "🗑", true);
+                Ui.button(c, bx + 28, ry + 12, 26, 8, true, c.hovered(bx + 28, ry + 12, 26, 8));
+                Ui.buttonLabel(c, bx + 28, ry + 12, 26, 8, "🗑", true);
             }
 
             if (System.currentTimeMillis() < toastUntil && !toast.isEmpty()) {
@@ -160,7 +156,7 @@ public final class VillagerTradeApp extends BaseApp {
 
         @Override
         public boolean mouseScrolled(double mx, double my, double amount) {
-            scroller.onWheel(amount, list.size() * 34, 130);
+            scroller.onWheel(amount, list.size() * 32, 130);
             return true;
         }
     }

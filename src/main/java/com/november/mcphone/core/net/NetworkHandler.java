@@ -4,6 +4,9 @@ import com.mcphoneultra.client.net.CloudPackets;
 import com.mcphoneultra.client.net.VillagerTradePacket;
 import com.mcphoneultra.server.CloudDriveServer;
 import com.mcphoneultra.server.FurnaceServer;
+import com.mcphoneultra.server.RemoteMerchant;
+import com.mcphoneultra.server.RemoteMerchantMenu;
+import net.minecraft.world.item.trading.MerchantOffers;
 import com.november.mcphone.MCphone;
 import com.november.mcphone.core.ModAttachments;
 import com.november.mcphone.core.ModDataComponents;
@@ -357,10 +360,24 @@ public final class NetworkHandler {
                 return;
             }
 
-            // 遠程開原版村民交易介面；交易與升級（經驗/等級提升）走原版機制，自然生效
-            player.openMenu(new SimpleMenuProvider(
-                    (containerId, inventory, p) -> new MerchantMenu(containerId, inventory, villager),
+            // 遠程開原版村民交易介面（自定義包裝，跳過村民的距離檢查）
+            // 交易、升級（經驗/等級）、聲望走原版機制，自然生效；offers 由 sendMerchantOffers 主動送出
+            RemoteMerchant remote = new RemoteMerchant(villager);
+            remote.setTradingPlayer(player);
+            var openId = player.openMenu(new SimpleMenuProvider(
+                    (containerId, inventory, p) -> new RemoteMerchantMenu(containerId, inventory, remote),
                     Component.translatable("entity.minecraft.villager")));
+            if (openId.isPresent()) {
+                MerchantOffers offers = villager.getOffers();
+                if (!offers.isEmpty()) {
+                    player.sendMerchantOffers(openId.getAsInt(), offers,
+                            villager.getVillagerData().getLevel(), villager.getVillagerXp(),
+                            remote.showProgressBar(), remote.canRestock());
+                } else {
+                    player.displayClientMessage(
+                            Component.translatable("mcphone_ultra.villager.no_offers").withStyle(ChatFormatting.RED), true);
+                }
+            }
         });
     }
 
