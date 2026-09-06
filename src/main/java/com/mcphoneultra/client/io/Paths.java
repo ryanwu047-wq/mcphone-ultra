@@ -39,9 +39,12 @@ public final class Paths {
         return p.resolve(parts[parts.length - 1]);
     }
 
-    /** 文件名安全化：去掉路径分隔符与非法字符 */
+    /** 文件名安全化：去掉路径分隔符与非法字符，并防目录穿越（.. 序列）。 */
     public static String safeName(String name) {
         String s = name.replaceAll("[\\\\/:*?\"<>|\\[\\]]", "_").trim();
+        // 防目录穿越：连续点号（".."、"...") 全部平掉；开头的单点也换成下划线
+        s = s.replaceAll("\\.\\.+", "_");
+        s = s.replaceAll("^\\.", "_");
         if (s.isEmpty()) s = "untitled";
         return s.length() > 40 ? s.substring(0, 40) : s;
     }
