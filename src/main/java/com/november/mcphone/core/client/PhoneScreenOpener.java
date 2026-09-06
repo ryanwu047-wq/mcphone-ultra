@@ -48,7 +48,34 @@ public final class PhoneScreenOpener {
      *                 玩家身上不止一部时不能改错。
      */
     public static void open(PhoneLocation location) {
+        // 手机永远是手机尺寸；平板开完机后再开手机会把尺寸切回来
+        PhoneTheme.setPhoneSize(120, 200);
         Minecraft.getInstance().setScreen(new PhoneScreen(location));
+    }
+
+    /**
+     * 平板：更大的屏幕（直向 190×300）。
+     */
+    public static void openTablet(PhoneLocation location, boolean landscape) {
+        if (landscape) {
+            PhoneTheme.setPhoneSize(320, 190);
+        } else {
+            PhoneTheme.setPhoneSize(190, 300);
+        }
+        Minecraft.getInstance().setScreen(new PhoneScreen(location));
+    }
+
+    /**
+     * 平板：找一部平板打开，找不到就什么都不做。
+     * 平板继承手机，PhoneLocation.find 会认到它。
+     */
+    public static boolean openTablet(Player player, boolean landscape) {
+        return PhoneLocation.find(player)
+                .map(location -> {
+                    openTablet(location, landscape);
+                    return true;
+                })
+                .orElse(false);
     }
 
     /**

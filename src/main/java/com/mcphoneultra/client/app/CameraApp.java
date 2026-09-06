@@ -83,6 +83,19 @@ public final class CameraApp extends BaseApp {
                 }
                 img.close();
                 ImageIO.write(bi, "png", p.toFile());
+                // 照片旁註：拍攝時的座標／維度／朝向
+                try {
+                    var player = mc.player;
+                    if (player != null) {
+                        String dim = player.level().dimension().location().getPath();
+                        String info = "X " + (int) player.getX() + "  Y " + (int) player.getY()
+                                + "  Z " + (int) player.getZ() + "  " + dim
+                                + "  朝向 " + Math.round(player.getYRot()) + "°";
+                        Files.write(dir.resolve(name + ".txt"),
+                                info.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                    }
+                } catch (IOException ignored) {
+                }
                 toast("已拍照 " + name);
                 reload();
             } catch (Exception e) {
@@ -162,6 +175,16 @@ public final class CameraApp extends BaseApp {
             Ui.fill(g, x, y, w, h, s.screenBackground());
             Ui.textClipped(c, "🖼 " + viewing + ".png", x + 3, y + 2, s.titleColor(), x, y, w, 12);
             Ui.hline(g, x, x + w, y + 11, s.buttonDisabledColor());
+
+            // 顯示拍照時的座標旁註（拍照時寫的 <名>.txt）
+            try {
+                java.nio.file.Path note = Paths.file("camera", viewing + ".txt");
+                if (java.nio.file.Files.isRegularFile(note)) {
+                    String info = java.nio.file.Files.readString(note);
+                    Ui.textClipped(c, "📍 " + info, x + 3, y + 13, s.accentColor(), x, y, w, 12);
+                }
+            } catch (Exception ignored) {
+            }
 
             if (clickOn(x + w - 50, y + 13, 48, 12)) {
                 viewing = null;

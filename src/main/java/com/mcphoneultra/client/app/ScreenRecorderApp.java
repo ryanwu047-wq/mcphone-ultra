@@ -97,7 +97,20 @@ public final class ScreenRecorderApp extends BaseApp {
                             com.mcphoneultra.client.util.Exec.norm(dir.resolve(sess + ".mp4")))
                             .redirectErrorStream(true)
                             .start();
-                    p.waitFor();
+                    // 讀掉輸出：ffmpeg 進度會寫管道，沒人讀會塞滿緩衝導致 waitFor 永不返回
+                    Thread drain = new Thread(() -> {
+                        try {
+                            p.getInputStream().transferTo(java.io.OutputStream.nullOutputStream());
+                        } catch (IOException ignored) {
+                        }
+                    }, "mcphone-ultra-ffmpeg-drain");
+                    drain.setDaemon(true);
+                    drain.start();
+                    if (!p.waitFor(120, java.util.concurrent.TimeUnit.SECONDS)) {
+                        p.destroyForcibly();
+                        toastLater("ffmpeg 合成逾時");
+                        return;
+                    }
                     toastLater("已合成 " + sess + ".mp4");
                     Minecraft.getInstance().execute(() -> reload());
                 } catch (Exception e) {

@@ -1,0 +1,133 @@
+package com.mcphoneultra.client.app;
+
+import com.mcphoneultra.client.net.CloudPackets;
+import com.mcphoneultra.client.ui.Ui;
+import com.november.mcphone.api.client.ui.IPhonePage;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.network.PacketDistributor;
+
+/**
+ * 🔥 隨身熔爐（手機內 UI）：放副手物品進輸入/燃料，服務端每 tick 燒煉。
+ * VIP 加速：VIP 2×、SVIP 4×；1 煤仍燒 8 個物品，加速只縮短時間。
+ */
+public final class FurnaceApp extends BaseApp {
+
+    public FurnaceApp() {
+        super("furnace", true);
+    }
+
+    @Override
+    protected IPhonePage createPage() {
+        return new FurnacePage();
+    }
+
+    public static void onState(CloudPackets.FurnaceStateS2C pkt) {
+        FurnacePage.receive(pkt);
+    }
+
+    private static final class FurnacePage extends ClickablePage {
+        private static volatile ItemStack in = ItemStack.EMPTY;
+        private static volatile ItemStack fuel = ItemStack.EMPTY;
+        private static volatile ItemStack out = ItemStack.EMPTY;
+        private static volatile int progress;
+        private static volatile int burn;
+        private static volatile int speed = 1;
+        private String toast = "";
+        private long toastUntil;
+
+        static void receive(CloudPackets.FurnaceStateS2C pkt) {
+            in = pkt.input();
+            fuel = pkt.fuel();
+            out = pkt.output();
+            progress = pkt.progress();
+            burn = pkt.burnTicks();
+            speed = pkt.speed();
+        }
+
+        private void toast(String s) {
+            toast = s;
+            toastUntil = System.currentTimeMillis() + 2000;
+        }
+
+        @Override
+        public void onOpen() {
+            PacketDistributor.sendToServer(new CloudPackets.FurnaceOpenC2S());
+        }
+
+        @Override
+        public void onClose() {
+            PacketDistributor.sendToServer(new CloudPackets.FurnaceCloseC2S());
+        }
+
+        @Override
+        public void render(com.november.mcphone.api.client.ui.PhoneCanvas c) {
+            int x = c.x(), y = c.y(), w = c.width(), h = c.height();
+            var s = c.style();
+            GuiGraphics g = c.graphics();
+            Ui.fill(g, x, y, w, h, s.screenBackground());
+
+            Ui.textClipped(c, "🔥 隨身熔爐", x + 3, y + 2, s.titleColor(), x, y, w, 12);
+            Ui.textClipped(c, "加速 " + speed + "×", x + w - 50, y + 2, s.subtleColor(), x, y, 48, 12);
+            Ui.hline(g, x, x + w, y + 11, s.buttonDisabledColor());
+
+            int cell = 44;
+            int gy = y + 40;
+            int centerY = gy + cell / 2 - 9;
+
+            // 輸入槽
+            drawSlot(c, g, s, x + 20, gy, cell, in, "輸入");
+            // 燃料槽
+            drawSlot(c, g, s, x + w - 20 - cell, gy, cell, fuel, "燃料");
+            // 輸出槽
+            drawSlot(c, g, s, x + w - 20 - cell, gy + 80, cell, out, "輸出");
+
+            // 火焰（燃料上方）
+            int fl = burn > 0 ? Math.max(3, 24 * Math.min(burn, 1600) / 1600) : 0;
+            Ui.fill(g, x + w - 20 - cell + 10, gy - 26, x + w - 20 - cell + 14 + fl / 2, gy - 22, 0xFFE07B00);
+            Ui.border(c, x + w - 20 - cell + 9, gy - 27, 24, 6, s.buttonDisabledColor());
+
+            // 進度條（輸入→輸出）
+            int px = x + 20 + cell + 10;
+            int pw = w - 40 - cell * 2 - 20;
+            Ui.fill(g, px, centerY, px + pw, centerY + 10, 0xFF101418);
+            Ui.fill(g, px, centerY, px + (int) (pw * progress / 200.0), centerY + 10, 0xFF5AC8FA);
+            Ui.border(c, px, centerY, pw, 10, s.buttonDisabledColor());
+
+            // 按鈕
+            int by = y + h - 34;
+            if (clickOn(x + 14, by, 60, 12)) {
+                PacketDistributor.sendToServer(new CloudPackets.FurnacePutInputC2S());
+            }
+            Ui.button(c, x + 14, by, 60, 12, true, c.hovered(x + 14, by, 60, 12));
+            Ui.buttonLabel(c, x + 14, by, 60, 12, "放輸入", true);
+            if (clickOn(x + 78, by, 60, 12)) {
+                PacketDistributor.sendToServer(new CloudPackets.FurnacePutFuelC2S());
+            }
+            Ui.button(c, x + 78, by, 60, 12, true, c.hovered(x + 78, by, 60, 12));
+            Ui.buttonLabel(c, x + 78, by, 60, 12, "放燃料", true);
+            if (clickOn(x + 142, by, 60, 12)) {
+                PacketDistributor.sendToServer(new CloudPackets.FurnaceTakeOutputC2S());
+            }
+            Ui.button(c, x + 142, by, 60, 12, true, c.hovered(x + 142, by, 60, 12));
+            Ui.buttonLabel(c, x + 142, by, 60, 12, "取輸出", true);
+            Ui.drawCentered(c, "物品放副手後點對應按鈕存入", x, y + h - 18, w, 12, s.subtleColor());
+
+            if (System.currentTimeMillis() < toastUntil && !toast.isEmpty()) {
+                Ui.drawCentered(c, toast, x, y + h - 14, w, 12, s.titleColor());
+            }
+        }
+
+        private static void drawSlot(com.november.mcphone.api.client.ui.PhoneCanvas c,
+                                     GuiGraphics g, com.november.mcphone.api.client.ui.PhoneStyle st,
+                                     int sx, int sy, int size, ItemStack stack, String label) {
+            Ui.fill(g, sx, sy, sx + size, sy + size, 0xFF1A1F26);
+            Ui.border(c, sx, sy, size, size, st.buttonDisabledColor());
+            Ui.text(c, label, sx + 3, sy + size + 2, st.subtleColor());
+            if (stack != null && !stack.isEmpty()) {
+                g.renderItem(stack, sx + 6, sy + 6);
+                g.renderItemDecorations(c.font(), stack, sx + 6, sy + 6);
+            }
+        }
+    }
+}

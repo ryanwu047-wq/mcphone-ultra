@@ -177,12 +177,21 @@ public final class WebBrowserApp extends BaseApp {
             if (clickOn(x + 89, by, 44, bh)) typingUrl = true;
             Ui.button(c, x + 89, by, 44, bh, true, c.hovered(x + 89, by, 44, bh));
             Ui.buttonLabel(c, x + 89, by, 44, bh, "網址", true);
-            if (clickOn(x + 135, by, w - 136, bh)) {
+            if (clickOn(x + 135, by, 24, bh)) {
+                if (com.november.mcphone.feature.browser.client.BrowserBackends.isMcefLoaded()) {
+                    toast("主屏「瀏覽器」App 就是真實 Chromium（MCEF）");
+                } else {
+                    toast("真實瀏覽器需安裝 MCEF 模組（首開下載約 200MB）");
+                }
+            }
+            Ui.button(c, x + 135, by, 24, bh, true, c.hovered(x + 135, by, 24, bh));
+            Ui.buttonLabel(c, x + 135, by, 24, bh, "⚡", true);
+            if (clickOn(x + 161, by, w - 162, bh)) {
                 Http.openExternal(url);
                 toast("已用系統瀏覽器開啟");
             }
-            Ui.button(c, x + 135, by, w - 136, bh, true, c.hovered(x + 135, by, w - 136, bh));
-            Ui.buttonLabel(c, x + 135, by, w - 136, bh, "系統開啟", true);
+            Ui.button(c, x + 161, by, w - 162, bh, true, c.hovered(x + 161, by, w - 162, bh));
+            Ui.buttonLabel(c, x + 161, by, w - 162, bh, "系統開啟", true);
 
             // 網址列
             Ui.fill(g, x + 2, y + 27, w - 4, 11, 0xFF000000);

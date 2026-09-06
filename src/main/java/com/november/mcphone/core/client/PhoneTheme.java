@@ -10,18 +10,26 @@ public final class PhoneTheme {
 
     private PhoneTheme() {}
 
-    /** 手机屏幕内宽（不含边框），单位：像素 */
-    public static final int PHONE_WIDTH = 120;
+    /** 手机屏幕内宽（不含边框），单位：像素。平板开机时会被调大 */
+    public static int PHONE_WIDTH = 120;
 
-    /** 手机屏幕内高（不含边框），单位：像素 */
-    public static final int PHONE_HEIGHT = 200;
+    /** 手机屏幕内高（不含边框），单位：像素。平板开机时会被调大 */
+    public static int PHONE_HEIGHT = 200;
+
+    /** 切到平板尺寸（直向/横向前由调用方给定） */
+    public static void setPhoneSize(int w, int h) {
+        PHONE_WIDTH = Math.max(80, Math.min(w, 420));
+        PHONE_HEIGHT = Math.max(80, Math.min(h, 320));
+        PHONE_TOTAL_WIDTH = PHONE_WIDTH + PHONE_BORDER * 2;
+        PHONE_TOTAL_HEIGHT = PHONE_HEIGHT + PHONE_BORDER * 2;
+    }
 
     /** 边框厚度。8 能撑到 11px 圆角；再厚整机高会在 240 的最小逻辑高度下顶到屏幕边 */
     public static final int PHONE_BORDER = 8;
 
-    public static final int PHONE_TOTAL_WIDTH = PHONE_WIDTH + PHONE_BORDER * 2;
+    public static int PHONE_TOTAL_WIDTH = PHONE_WIDTH + PHONE_BORDER * 2;
 
-    public static final int PHONE_TOTAL_HEIGHT = PHONE_HEIGHT + PHONE_BORDER * 2;
+    public static int PHONE_TOTAL_HEIGHT = PHONE_HEIGHT + PHONE_BORDER * 2;
 
     public static final int COLOR_FRAME = 0xFF2C2C2C;
 

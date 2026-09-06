@@ -5,6 +5,7 @@ import com.november.mcphone.core.ModAttachments;
 import com.november.mcphone.core.ModCreativeTabs;
 import com.november.mcphone.core.ModDataComponents;
 import com.november.mcphone.core.PhoneItem;
+import com.november.mcphone.core.TabletItem;
 import net.minecraft.world.item.Rarity;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -30,6 +31,10 @@ public class MCphone {
     public static final DeferredItem<PhoneItem> PHONE = ITEMS.registerItem("phone",
             props -> new PhoneItem(props.stacksTo(1).rarity(Rarity.RARE)));
 
+    /** 平板：手机的放大版，合成比手机难得多 */
+    public static final DeferredItem<TabletItem> TABLET = ITEMS.registerItem("tablet",
+            props -> new TabletItem(props.stacksTo(1).rarity(Rarity.EPIC)));
+
     public MCphone(IEventBus modEventBus, ModContainer modContainer) {
         ITEMS.register(modEventBus);
         ModDataComponents.COMPONENTS.register(modEventBus);
@@ -50,6 +55,24 @@ public class MCphone {
         // 开服时清掉没有消息认领的图片文件，理由见 ChatImageStore.sweepOrphans
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
                 com.november.mcphone.feature.chat.ChatImageStore::onServerStarted);
+
+        // Ultra 手機：蹲下＋右鍵村民＝綁定聯絡人（遠程交易 App 用）
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
+                com.mcphoneultra.client.villager.VillagerBind::onInteract);
+
+        // Ultra 隨身熔爐：每 tick 燒煉（只對開著熔爐 App 的玩家）
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
+                com.mcphoneultra.server.FurnaceServer::onServerTick);
+
+        // Ultra 鬧鐘：客戶端 tick 檢查到點（手機關著也響）
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
+                (net.neoforged.neoforge.client.event.ClientTickEvent.Post e) ->
+                        com.mcphoneultra.client.app.AlarmApp.onClientTick());
+
+        // Ultra 探索地圖：客戶端 tick 記錄走過的 chunk（關著手機也在探索）
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
+                (net.neoforged.neoforge.client.event.ClientTickEvent.Post e) ->
+                        com.mcphoneultra.client.app.ExploreMap.onClientTick());
 
         // SERVER 而非 COMMON：必须由服主一份说了算，且 NeoForge 会同步给客户端供界面藏按钮
         modContainer.registerConfig(net.neoforged.fml.config.ModConfig.Type.SERVER,

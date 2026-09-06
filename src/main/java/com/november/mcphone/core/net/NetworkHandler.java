@@ -1,5 +1,9 @@
 package com.november.mcphone.core.net;
 
+import com.mcphoneultra.client.net.CloudPackets;
+import com.mcphoneultra.client.net.VillagerTradePacket;
+import com.mcphoneultra.server.CloudDriveServer;
+import com.mcphoneultra.server.FurnaceServer;
 import com.november.mcphone.MCphone;
 import com.november.mcphone.core.ModAttachments;
 import com.november.mcphone.core.ModDataComponents;
@@ -18,6 +22,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleMenuProvider;
+import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.inventory.MerchantMenu;
 import net.minecraft.world.inventory.PlayerEnderChestContainer;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
@@ -85,6 +91,91 @@ public final class NetworkHandler {
                 OpenEnderChestPacket.STREAM_CODEC,
                 NetworkHandler::handleOpenEnderChest
         );
+
+        // C2S: 村民遠程交易（Ultra 手機 App）
+        registrar.playToServer(
+                VillagerTradePacket.TYPE,
+                VillagerTradePacket.STREAM_CODEC,
+                NetworkHandler::handleVillagerTrade
+        );
+
+        // ---- Ultra 網盤 ----
+        registrar.playToServer(
+                CloudPackets.CloudOpenC2S.TYPE, CloudPackets.CloudOpenC2S.STREAM_CODEC,
+                NetworkHandler::handleCloudOpen);
+        registrar.playToServer(
+                CloudPackets.CloudPageC2S.TYPE, CloudPackets.CloudPageC2S.STREAM_CODEC,
+                NetworkHandler::handleCloudPage);
+        registrar.playToServer(
+                CloudPackets.CloudTakeC2S.TYPE, CloudPackets.CloudTakeC2S.STREAM_CODEC,
+                NetworkHandler::handleCloudTake);
+        registrar.playToServer(
+                CloudPackets.CloudPutC2S.TYPE, CloudPackets.CloudPutC2S.STREAM_CODEC,
+                NetworkHandler::handleCloudPut);
+        registrar.playToServer(
+                CloudPackets.CloudUpgradeC2S.TYPE, CloudPackets.CloudUpgradeC2S.STREAM_CODEC,
+                NetworkHandler::handleCloudUpgrade);
+        registrar.playToClient(
+                CloudPackets.CloudSnapshotS2C.TYPE, CloudPackets.CloudSnapshotS2C.STREAM_CODEC,
+                NetworkHandler::handleCloudSnapshot);
+
+        // ---- Ultra 隨身合成 / 熔爐 / 附魔 ----
+        registrar.playToServer(
+                CloudPackets.CraftOpenC2S.TYPE, CloudPackets.CraftOpenC2S.STREAM_CODEC,
+                NetworkHandler::handleCraftOpen);
+        registrar.playToServer(
+                CloudPackets.FurnaceOpenC2S.TYPE, CloudPackets.FurnaceOpenC2S.STREAM_CODEC,
+                NetworkHandler::handleFurnaceOpen);
+        registrar.playToServer(
+                CloudPackets.EnchantOpenC2S.TYPE, CloudPackets.EnchantOpenC2S.STREAM_CODEC,
+                NetworkHandler::handleEnchantOpen);
+        registrar.playToServer(
+                CloudPackets.FurnacePutInputC2S.TYPE, CloudPackets.FurnacePutInputC2S.STREAM_CODEC,
+                NetworkHandler::handleFurnacePutInput);
+        registrar.playToServer(
+                CloudPackets.FurnacePutFuelC2S.TYPE, CloudPackets.FurnacePutFuelC2S.STREAM_CODEC,
+                NetworkHandler::handleFurnacePutFuel);
+        registrar.playToServer(
+                CloudPackets.FurnaceTakeOutputC2S.TYPE, CloudPackets.FurnaceTakeOutputC2S.STREAM_CODEC,
+                NetworkHandler::handleFurnaceTakeOutput);
+        registrar.playToServer(
+                CloudPackets.FurnaceCloseC2S.TYPE, CloudPackets.FurnaceCloseC2S.STREAM_CODEC,
+                NetworkHandler::handleFurnaceClose);
+        registrar.playToClient(
+                CloudPackets.FurnaceStateS2C.TYPE, CloudPackets.FurnaceStateS2C.STREAM_CODEC,
+                NetworkHandler::handleFurnaceState);
+
+        // 物品郵件
+        registrar.playToServer(
+                com.mcphoneultra.client.net.MailPackets.MailOpenC2S.TYPE,
+                com.mcphoneultra.client.net.MailPackets.MailOpenC2S.STREAM_CODEC,
+                NetworkHandler::handleMailOpen);
+        registrar.playToServer(
+                com.mcphoneultra.client.net.MailPackets.MailSendC2S.TYPE,
+                com.mcphoneultra.client.net.MailPackets.MailSendC2S.STREAM_CODEC,
+                NetworkHandler::handleMailSend);
+        registrar.playToServer(
+                com.mcphoneultra.client.net.MailPackets.MailTakeC2S.TYPE,
+                com.mcphoneultra.client.net.MailPackets.MailTakeC2S.STREAM_CODEC,
+                NetworkHandler::handleMailTake);
+        registrar.playToServer(
+                com.mcphoneultra.client.net.MailPackets.MailReadC2S.TYPE,
+                com.mcphoneultra.client.net.MailPackets.MailReadC2S.STREAM_CODEC,
+                NetworkHandler::handleMailRead);
+        registrar.playToClient(
+                com.mcphoneultra.client.net.MailPackets.MailListS2C.TYPE,
+                com.mcphoneultra.client.net.MailPackets.MailListS2C.STREAM_CODEC,
+                NetworkHandler::handleMailList);
+        registrar.playToClient(
+                com.mcphoneultra.client.net.MailPackets.MailNotifyS2C.TYPE,
+                com.mcphoneultra.client.net.MailPackets.MailNotifyS2C.STREAM_CODEC,
+                NetworkHandler::handleMailNotify);
+
+        // ☎ 電話（Simple Voice Chat 語音群組）
+        registrar.playToServer(
+                com.mcphoneultra.client.net.PhoneCallPacket.PhoneCallC2S.TYPE,
+                com.mcphoneultra.client.net.PhoneCallPacket.PhoneCallC2S.STREAM_CODEC,
+                NetworkHandler::handlePhoneCall);
 
         // C2S: 玩家在手机里点了传送石
         //
@@ -156,6 +247,174 @@ public final class NetworkHandler {
 
             MCphone.LOGGER.debug("玩家 {} 设置设备名: {}", player.getName().getString(),
                     name.isEmpty() ? "(清除)" : name);
+        });
+    }
+
+    // ---- Ultra 網盤 / 隨身工具 handler ----
+
+    private static void handleCloudOpen(CloudPackets.CloudOpenC2S pkt, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> {
+            if (ctx.player() instanceof ServerPlayer sp) CloudDriveServer.open(sp);
+        });
+    }
+
+    private static void handleCloudPage(CloudPackets.CloudPageC2S pkt, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> {
+            if (ctx.player() instanceof ServerPlayer sp) CloudDriveServer.page(sp, pkt.page());
+        });
+    }
+
+    private static void handleCloudTake(CloudPackets.CloudTakeC2S pkt, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> {
+            if (ctx.player() instanceof ServerPlayer sp) CloudDriveServer.take(sp, pkt.slot());
+        });
+    }
+
+    private static void handleCloudPut(CloudPackets.CloudPutC2S pkt, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> {
+            if (ctx.player() instanceof ServerPlayer sp) CloudDriveServer.put(sp, pkt.slot());
+        });
+    }
+
+    private static void handleCloudUpgrade(CloudPackets.CloudUpgradeC2S pkt, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> {
+            if (ctx.player() instanceof ServerPlayer sp) CloudDriveServer.upgrade(sp, pkt.tierOrdinal());
+        });
+    }
+
+    private static void handleCloudSnapshot(CloudPackets.CloudSnapshotS2C pkt, IPayloadContext ctx) {
+        // 客戶端接收：由網盤 App 頁面自己訂閱處理（見 CloudDriveApp）
+        ctx.enqueueWork(() -> com.mcphoneultra.client.app.CloudDriveApp.onSnapshot(pkt));
+    }
+
+    private static void handleCraftOpen(CloudPackets.CraftOpenC2S pkt, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> {
+            if (ctx.player() instanceof ServerPlayer sp) CloudDriveServer.openCraft(sp);
+        });
+    }
+
+    private static void handleFurnaceOpen(CloudPackets.FurnaceOpenC2S pkt, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> {
+            if (ctx.player() instanceof ServerPlayer sp) CloudDriveServer.openFurnace(sp);
+        });
+    }
+
+    private static void handleEnchantOpen(CloudPackets.EnchantOpenC2S pkt, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> {
+            if (ctx.player() instanceof ServerPlayer sp) CloudDriveServer.openEnchant(sp);
+        });
+    }
+
+    private static void handleFurnacePutInput(CloudPackets.FurnacePutInputC2S pkt, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> {
+            if (ctx.player() instanceof ServerPlayer sp) FurnaceServer.putInput(sp);
+        });
+    }
+
+    private static void handleFurnacePutFuel(CloudPackets.FurnacePutFuelC2S pkt, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> {
+            if (ctx.player() instanceof ServerPlayer sp) FurnaceServer.putFuel(sp);
+        });
+    }
+
+    private static void handleFurnaceTakeOutput(CloudPackets.FurnaceTakeOutputC2S pkt, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> {
+            if (ctx.player() instanceof ServerPlayer sp) FurnaceServer.takeOutput(sp);
+        });
+    }
+
+    private static void handleFurnaceClose(CloudPackets.FurnaceCloseC2S pkt, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> {
+            if (ctx.player() instanceof ServerPlayer sp) FurnaceServer.close(sp);
+        });
+    }
+
+    private static void handleFurnaceState(CloudPackets.FurnaceStateS2C pkt, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> com.mcphoneultra.client.app.FurnaceApp.onState(pkt));
+    }
+
+    /**
+     * 服务端收到：遠程與綁定村民交易（Ultra 手機 App）。
+     *
+     * 封包是客户端发的，不能信：身上得真有手机才放行。村民按 UUID 在
+     * 服务端找——不在线/死了就拒绝（村民要活着才能交易）。
+     */
+    private static void handleVillagerTrade(VillagerTradePacket packet, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> {
+            if (!(ctx.player() instanceof ServerPlayer player)) return;
+
+            if (!PhoneItem.isCarriedBy(player)) {
+                MCphone.LOGGER.debug("玩家 {} 请求遠程交易但身上没有手机，已忽略",
+                        player.getName().getString());
+                return;
+            }
+
+            if (!(player.serverLevel().getEntity(packet.villager()) instanceof Villager villager)
+                    || !villager.isAlive()) {
+                player.displayClientMessage(
+                        Component.translatable("mcphone_ultra.villager.gone")
+                                .withStyle(ChatFormatting.RED), true);
+                return;
+            }
+
+            // 遠程開原版村民交易介面；交易與升級（經驗/等級提升）走原版機制，自然生效
+            player.openMenu(new SimpleMenuProvider(
+                    (containerId, inventory, p) -> new MerchantMenu(containerId, inventory, villager),
+                    Component.translatable("entity.minecraft.villager")));
+        });
+    }
+
+    // ---- Ultra 物品郵件 ----
+
+    private static void handleMailOpen(com.mcphoneultra.client.net.MailPackets.MailOpenC2S pkt, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> {
+            if (ctx.player() instanceof ServerPlayer player) {
+                com.mcphoneultra.client.net.MailPackets.handleOpen(player);
+            }
+        });
+    }
+
+    private static void handleMailSend(com.mcphoneultra.client.net.MailPackets.MailSendC2S pkt, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> {
+            if (ctx.player() instanceof ServerPlayer player) {
+                com.mcphoneultra.client.net.MailPackets.handleSend(player, pkt.toName(), pkt.message());
+            }
+        });
+    }
+
+    private static void handleMailTake(com.mcphoneultra.client.net.MailPackets.MailTakeC2S pkt, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> {
+            if (ctx.player() instanceof ServerPlayer player) {
+                com.mcphoneultra.client.net.MailPackets.handleTake(player, pkt.index());
+            }
+        });
+    }
+
+    private static void handleMailRead(com.mcphoneultra.client.net.MailPackets.MailReadC2S pkt, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> {
+            if (ctx.player() instanceof ServerPlayer player) {
+                com.mcphoneultra.client.net.MailPackets.handleRead(player, pkt.index());
+            }
+        });
+    }
+
+    private static void handleMailList(com.mcphoneultra.client.net.MailPackets.MailListS2C pkt, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> com.mcphoneultra.client.app.MailboxApp.receiveList(pkt));
+    }
+
+    private static void handleMailNotify(com.mcphoneultra.client.net.MailPackets.MailNotifyS2C pkt, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> com.mcphoneultra.client.app.MailboxApp.receiveNotify(pkt));
+    }
+
+    private static void handlePhoneCall(com.mcphoneultra.client.net.PhoneCallPacket.PhoneCallC2S pkt, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> {
+            if (!(ctx.player() instanceof ServerPlayer player)) return;
+            if (!PhoneItem.isCarriedBy(player)) return;
+            if (pkt.action() == 0) {
+                com.mcphoneultra.server.VoiceCall.call(player, pkt.targetName());
+            } else {
+                com.mcphoneultra.server.VoiceCall.hangup(player);
+            }
         });
     }
 
