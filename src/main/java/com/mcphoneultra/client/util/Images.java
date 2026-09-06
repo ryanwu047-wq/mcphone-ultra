@@ -6,26 +6,49 @@ import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.resources.ResourceLocation;
 
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /** 图像读取与贴图上传助手：任意格式（经 ImageIO）→ NativeImage → DynamicTexture。 */
 public final class Images {
 
+    /** 檢視用圖上限：4096×4096（4K 截圖都涵蓋）。防假 PNG 宣告 99999×99999 在解碼時 OOM */
+    private static final int MAX_SIDE = 4096;
+
     private static final AtomicInteger SEQ = new AtomicInteger();
 
     private Images() {}
 
-    /** 任意图片（PNG/JPG/GIF 首帧…）→ NativeImage。失败返回 null。 */
+    /**
+     * 任意图片（PNG/JPG/GIF 首帧…）→ NativeImage。失败或超过尺寸上限返回 null。
+     * 解碼前先讀 header 驗尺寸，避免「解壓炸彈」在 ImageIO.read 階段吃爆記憶體。
+     */
     public static NativeImage readAny(Path p) {
-        try (InputStream in = Files.newInputStream(p)) {
-            BufferedImage src = ImageIO.read(in);
-            if (src == null) return null;
-            return toNative(src);
+        try (ImageInputStream iis = ImageIO.createImageInputStream(Files.newInputStream(p))) {
+            if (iis == null) return null;
+            Iterator<ImageReader> readers = ImageIO.getImageReaders(iis);
+            if (!readers.hasNext()) return null;
+            ImageReader reader = readers.next();
+            try {
+                reader.setInput(iis, true, true);
+                int w = reader.getWidth(0);
+                int h = reader.getHeight(0);
+                if (w <= 0 || h <= 0 || w > MAX_SIDE || h > MAX_SIDE) {
+                    return null;
+                }
+                BufferedImage src = reader.read(0);
+                if (src == null) return null;
+                return toNative(src);
+            } finally {
+                reader.dispose();
+            }
         } catch (Exception e) {
             return null;
         }
