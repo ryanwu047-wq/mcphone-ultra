@@ -63,15 +63,18 @@ public final class UltraDisplay {
             g.fill(x, y, x + w, y + h, (Math.min(alpha, 200) << 24) | 0x000000);
         }
         if (colorBlind != ColorBlindMode.NONE) {
-            int mask = switch (colorBlind) {
-                case PROTANOPIA -> 0x14 << 24 | 0x00D8FF;      // 補紅：疊淡青色
-                case DEUTERANOPIA -> 0x14 << 24 | 0xFF50B0;    // 補綠：疊淡紫紅
-                case TRITANOPIA -> 0x14 << 24 | 0xFFD050;      // 補藍：疊淡琥珀
-                case MONOCHROME -> 0x46 << 24 | 0x808080;      // 全灰：疊半透明中性灰
-                case NONE -> 0;
-            };
-            if (mask != 0) {
-                g.fill(x, y, x + w, y + h, mask);
+            switch (colorBlind) {
+                case PROTANOPIA -> g.fill(x, y, x + w, y + h, 0x14 << 24 | 0x00D8FF);   // 補紅：疊淡青色
+                case DEUTERANOPIA -> g.fill(x, y, x + w, y + h, 0x14 << 24 | 0xFF50B0); // 補綠：疊淡紫紅
+                case TRITANOPIA -> g.fill(x, y, x + w, y + h, 0x14 << 24 | 0xFFD050);   // 補藍：疊淡琥珀
+                // 灰階：真正的去飽和。GuiGraphics 沒有逐像素能力，用「先疊白沖淡、
+                // 再疊黑壓暗」的雙層近似：最終每通道 ≈ src*0.29 + 40，色差被壓到
+                // 約 1/3，彩色畫面變成明顯的灰白畫面。
+                case MONOCHROME -> {
+                    g.fill(x, y, x + w, y + h, 0x59FFFFFF);
+                    g.fill(x, y, x + w, y + h, 0x8C000000);
+                }
+                case NONE -> { }
             }
         }
     }

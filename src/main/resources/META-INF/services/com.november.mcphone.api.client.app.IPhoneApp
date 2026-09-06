@@ -19,9 +19,6 @@ com.mcphoneultra.client.app.PythonApp
 com.mcphoneultra.client.app.TermuxApp
 com.mcphoneultra.client.app.BilibiliApp
 com.mcphoneultra.client.app.YoutubeApp
-com.mcphoneultra.client.app.MusicLabApp
-com.mcphoneultra.client.app.MusicPlayerApp
-com.mcphoneultra.client.app.SpeakerApp
 com.mcphoneultra.client.app.WebBrowserApp
 com.mcphoneultra.client.app.CameraApp
 com.mcphoneultra.client.app.VrApp
@@ -35,7 +32,6 @@ com.mcphoneultra.client.app.TetrisApp
 com.mcphoneultra.client.app.StarShooterApp
 com.mcphoneultra.client.app.MemoryApp
 com.mcphoneultra.client.app.EmulatorApp
-com.mcphoneultra.client.app.MaimaiApp
 com.mcphoneultra.client.app.UltraStoreApp
 com.mcphoneultra.client.app.LuckyShakeApp
 com.mcphoneultra.client.app.SplashCardApp

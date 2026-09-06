@@ -26,18 +26,18 @@ public final class UltraDisplayPage {
         final int x = phoneLeft + PAD_X;
         final int w = screenW - PAD_X * 2;
         final int bottom = phoneTop + screenH - navH;
-        int y = phoneTop + statusH + 4;
+        int y = phoneTop + statusH + 2;
 
         g.drawString(font, Component.translatable("mcphone_ultra.settings.display").getString(),
                 x, y, FontPalette.title(), true);
-        y += font.lineHeight + 4;
+        y += font.lineHeight;
         g.fill(x, y, x + w, y + 1, PhoneTheme.COLOR_DIVIDER);
-        y += 4;
+        y += 3;
 
         // —— 亮度 ——
         g.drawString(font, "🔆 亮度：" + UltraDisplay.brightnessLabel(),
                 x + 2, y, FontPalette.body(), false);
-        y += font.lineHeight + 5;
+        y += font.lineHeight + 2;
 
         barLeft = x + 2;
         barTop = y;
@@ -57,14 +57,12 @@ public final class UltraDisplayPage {
             applyBrightness(mouseX);
         }
 
-        y += 16;
+        y += 13;
 
         // —— 色盲補助 ——
-        g.drawString(font, "🎨 色盲補助（螢幕濾鏡）", x + 2, y, FontPalette.body(), false);
-        y += font.lineHeight;
-        g.drawString(font, "目前：" + UltraDisplay.colorBlindLabel(),
-                x + 2, y, FontPalette.subtle(), false);
-        y += font.lineHeight + 5;
+        g.drawString(font, "🎨 色盲補助：" + UltraDisplay.colorBlindLabel(),
+                x + 2, y, FontPalette.body(), false);
+        y += font.lineHeight + 3;
 
         String[] ids = { "NONE", "PROTANOPIA", "DEUTERANOPIA", "TRITANOPIA", "MONOCHROME" };
         String[] names = { "關閉", "紅弱", "綠弱", "藍黃弱", "灰階" };
@@ -76,38 +74,19 @@ public final class UltraDisplayPage {
         for (int i = 0; i < 5; i++) {
             int bx = x + 2 + i * (bw + 3);
             boolean active = UltraDisplay.colorBlind().name().equals(ids[i]);
-            if (mouseX >= bx && mouseX <= bx + bw && mouseY >= y && mouseY <= y + 18) {
+            if (mouseX >= bx && mouseX <= bx + bw && mouseY >= y && mouseY <= y + 16) {
                 applyColorBlind(UltraDisplay.ColorBlindMode.valueOf(ids[i]));
             }
-            g.fill(bx, y, bx + bw, y + 18, active ? PhoneTheme.COLOR_MUSIC_PROGRESS : bg[i]);
+            g.fill(bx, y, bx + bw, y + 16, active ? PhoneTheme.COLOR_MUSIC_PROGRESS : bg[i]);
             String label = names[i];
-            g.drawString(font, label, bx + (bw - font.width(label)) / 2, y + 5,
+            g.drawString(font, label, bx + (bw - font.width(label)) / 2, y + 4,
                     active ? FontPalette.title() : FontPalette.body(), false);
         }
 
-        y += 26;
+        y += 22;
 
-        // —— 預覽與說明 ——
-        g.drawString(font, "預覽（濾鏡已套在整個手機畫面）",
+        g.drawString(font, "即時生效，存在本機 config；返回鍵（◀）離開。",
                 x + 2, y, FontPalette.subtle(), false);
-        y += font.lineHeight + 3;
-        g.fill(x + 2, y, x + 34, y + 16, 0xFFFF4444);
-        g.fill(x + 38, y, x + 70, y + 16, 0xFF44FF44);
-        g.fill(x + 74, y, x + 106, y + 16, 0xFF4488FF);
-        g.fill(x + 110, y, x + 142, y + 16, 0xFFFFFF44);
-        g.drawString(font, "紅 綠 藍 黃", x + 150, y + 4, FontPalette.body(), false);
-        y += 24;
-
-        g.drawString(font, "亮度與濾鏡即時生效，存在本機 config 裡。",
-                x + 2, y, FontPalette.subtle(), false);
-        y += font.lineHeight + 2;
-        g.drawString(font, "返回鍵（◀）回到設定列表。",
-                x + 2, y, FontPalette.subtle(), false);
-
-        if (y > bottom) {
-            g.drawString(font, "（畫面太小，滾輪可調亮度）", x + 2, bottom - 12,
-                    FontPalette.subtle(), false);
-        }
     }
 
     private void applyBrightness(double mouseX) {

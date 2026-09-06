@@ -179,7 +179,11 @@ dependencies {
     // 越少越好，而断了会是 NoSuchMethodError 这类 Error，兼容层里兜的是
     // Throwable 不是 Exception，正是为了这个。
     compileOnly "maven.modrinth:net-music:${netmusic_version}"
-    localRuntime "maven.modrinth:net-music:${netmusic_version}"
+    // 不写 localRuntime：netmusic 1.5.1 的 music_player_backpack 配方引用了
+    // Touhou Little Maid 的 recipe serializer 却没有前置声明，dev 环境一建/进
+    // 世界就崩（Unknown registry key touhou_little_maid:altar_recipe_serializers）。
+    // 联动的 NetSongPlayback 是 ModList 判别的，玩家端真装了再走那条路，
+    // 开发环境没必要陪着它崩。
 
     // Patchouli（教程手册）—— 可选依赖：装了就多一个「阅读」App，把整合包里
     // 所有教程书收进手机，没装则该 App 不出现。
@@ -199,16 +203,11 @@ dependencies {
     // JavaMP3 —— MP3 解码。这是【必需】依赖，不是可选联动：玩家往音乐
     // 目录里丢一个 mp3，不该要求他再去装别的模组。
     //
-    // jarJar 而不是 implementation：模组 jar 不会自动带上第三方库，只写
-    // implementation 的话开发环境跑得起来、发出去的 jar 一运行就
-    // NoClassDefFoundError。jarJar 把它嵌进 jar 里，由 NeoForge 在加载时
-    // 展开；版本写成区间是 JarJar 的硬要求（它要在多个模组嵌了同一个库时
-    // 挑一个满足所有人的版本）。
-    //
-    // 选它的理由：纯 Java、零依赖、MIT。GitHub 上纯 Java 的 MP3 解码器里，
-    // 非 LGPL 的实际上只有它一个（JLayer 与 mp3spi 都是 LGPL，而 LGPL 的
-    // 库嵌进要分发的 jar 里是个说不清的灰区）。
-    jarJar(implementation("fr.delthas:javamp3:[${javamp3_version},2.0)"))
+    // javamp3：纯 Java 的 MP3 解码器（fr.delthas，MIT，唯一非 LGPL 的纯 Java 方案）。
+    // 版本写成区间是 JarJar 的硬要求——但 JarJar 依赖在 dev 的 runClient 下
+    // 不会自动展开（实测 NoClassDefFoundError: fr/delthas/javamp3/Sound），
+    // 所以和 GraalJS 一样改走 ultraLibs 胖打包：dev 的 runtimeClasspath 有它，
+    // 发出去的 jar 里也平铺着它。add 写在下方 ultraLibs 配置创建之后。
 
     // ---- MCphone Ultra 全家桶：JS 引擎 / 压缩解压 ----
     // GraalJS：给「JS 编程」「Termux」「模拟器」「游戏工坊」当运行时。
@@ -232,6 +231,22 @@ dependencies {
     add('ultraLibs', 'org.graalvm.js:js:23.0.13.1')
     add('ultraLibs', 'org.graalvm.js:js-scriptengine:23.0.13.1')
     add('ultraLibs', 'org.graalvm.sdk:graal-sdk:23.0.13.1')
+
+    // javamp3（MP3 解码）：原作者 MusicApp 的 Mp3Decoder 依赖它，必须保留。
+    // 走 ultraLibs 胖打包：dev 的 runClient 也能用（jarJar 在 dev 不展开）。
+    add('ultraLibs', 'fr.delthas:javamp3:1.0.1')
+
+    // ---- 上面 ultraLibs 的库必须同步进 localRuntime ----
+    // ModDevGradle 的 devlaunch classpath 不含 ultraLibs，只吃 localRuntime；
+    // 不加的话 dev 的 runClient 一碰音乐/JS/模拟器/解压就
+    // NoClassDefFoundError（实测 javamp3 崩在 BuiltinClassLoader）。
+    // localRuntime 只进开发环境、不传播给下游，jar 由 jar 任务 from ultraLibs 胖打包。
+    localRuntime 'org.graalvm.js:js:23.0.13.1'
+    localRuntime 'org.graalvm.js:js-scriptengine:23.0.13.1'
+    localRuntime 'org.graalvm.sdk:graal-sdk:23.0.13.1'
+    localRuntime 'fr.delthas:javamp3:1.0.1'
+    localRuntime 'org.apache.commons:commons-compress:1.26.0'
+    localRuntime 'org.tukaani:xz:1.10'
 
     // Commons Compress：zip/7z/rar 的读取与 zip 写入（含密码）。
     // xz 是 7z 的 LZMA2 运行时依赖（tukaani，公有领域）。

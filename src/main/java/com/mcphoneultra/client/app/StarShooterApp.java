@@ -15,7 +15,7 @@ import java.util.Random;
 public final class StarShooterApp extends BaseApp {
 
     public StarShooterApp() {
-        super("shooter", false);
+        super("starshooter", false);
     }
 
     @Override
@@ -111,6 +111,7 @@ public final class StarShooterApp extends BaseApp {
         }
 
         private boolean moveLeft, moveRight, fireHeld;
+        private int gx, gy;   // 遊戲區左上（render 時更新，供滑鼠事件用）
 
         @Override
         public void onOpen() {
@@ -133,7 +134,8 @@ public final class StarShooterApp extends BaseApp {
             Ui.button(canvas, x + w - 40, y + 13, 38, 12, true, canvas.hovered(x + w - 40, y + 13, 38, 12));
             Ui.buttonLabel(canvas, x + w - 40, y + 13, 38, 12, "重開", true);
 
-            int gx = x + 4, gy = y + 26;
+            gx = x + 4;
+            gy = y + 26;
             long t = System.currentTimeMillis() / 100;
             for (int i = 0; i < 12; i++) {
                 int sx = gx + (i * 53 + (int) (t * (i % 3 + 1))) % Math.max(1, width);
@@ -170,6 +172,35 @@ public final class StarShooterApp extends BaseApp {
                     return false;
                 }
             }
+            return true;
+        }
+
+        @Override
+        public boolean keyReleased(int key, int scan, int mods) {
+            switch (key) {
+                case GLFW.GLFW_KEY_LEFT, GLFW.GLFW_KEY_A -> moveLeft = false;
+                case GLFW.GLFW_KEY_RIGHT, GLFW.GLFW_KEY_D -> moveRight = false;
+                case GLFW.GLFW_KEY_SPACE, GLFW.GLFW_KEY_UP, GLFW.GLFW_KEY_W -> fireHeld = false;
+                default -> {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // 滑鼠點擊遊戲區＝開火（手機環境主要靠點擊）
+        @Override
+        public boolean mouseClicked(double mouseX, double mouseY, int button) {
+            super.mouseClicked(mouseX, mouseY, button);
+            if (button == 0 && Ui.hit(gx, gy, width, height, (int) mouseX, (int) mouseY)) {
+                fireHeld = true;
+            }
+            return true;
+        }
+
+        @Override
+        public boolean mouseReleased(double mouseX, double mouseY, int button) {
+            if (button == 0) fireHeld = false;
             return true;
         }
 

@@ -40,9 +40,6 @@ public final class UltraStoreApp extends BaseApp {
                 { "Termux", "命令列終端" },
                 { "Bilibili", "B 站影片" },
                 { "YouTube", "YouTube 影片" },
-                { "音樂編輯", "剪裁·拼接·效果·存檔" },
-                { "音樂播放", "music/ 播放清單" },
-                { "音樂外放", "JavaSound + 世界音符廣播" },
                 { "網頁瀏覽器", "文字瀏覽 + 系統開啟" },
                 { "相機", "螢幕拍照 + 膠捲" },
                 { "VR 連動", "雙目預覽與玩家視角" },
@@ -56,7 +53,6 @@ public final class UltraStoreApp extends BaseApp {
                 { "太空射擊", "STG 小遊戲" },
                 { "翻牌記憶", "記憶配對" },
                 { "模擬器", "NES/GB/GBA" },
-                { "maimai", "正版譜匯入 + 編輯" },
                 { "忘憂鈴", "搖一搖的小確幸" },
                 { "晨光卡片", "開機問候卡" },
         };
