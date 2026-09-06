@@ -11,9 +11,7 @@ awa
 
 添加了好幾種功能
 
-JS/Python/Termux Python需要安裝python加入path
-
-termux就是cmd
+JS/Python/ Python需要安裝python加入path
 
 youtube無法使用 
 
