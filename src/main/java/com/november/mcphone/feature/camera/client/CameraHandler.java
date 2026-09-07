@@ -1,15 +1,18 @@
 package com.november.mcphone.feature.camera.client;
 
 import com.mojang.blaze3d.platform.NativeImage;
+import com.mcphoneultra.client.net.CloudPackets;
 import com.november.mcphone.MCphone;
 import com.november.mcphone.core.client.MCphoneKeyBindings;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.material.MapColor;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.neoforged.neoforge.client.event.ScreenEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
 import java.io.File;
@@ -28,6 +31,7 @@ public final class CameraHandler {
     private CameraHandler() {}
 
     private static boolean selfieKeyDown = false;
+    private static boolean mapKeyDown = false;
 
     public static void onClientTick(ClientTickEvent.Post event) {
         if (!CameraMode.isActive()) return;
@@ -48,6 +52,11 @@ public final class CameraHandler {
         if (vDown && !selfieKeyDown) CameraMode.toggleSelfie();
         selfieKeyDown = vDown;
 
+        // G 键：把当前画面导出成满级地图画（不落盘 png，直接转地图）
+        boolean gDown = GLFW.glfwGetKey(win, GLFW.GLFW_KEY_G) == GLFW.GLFW_PRESS;
+        if (gDown && !mapKeyDown) exportMap(mc);
+        mapKeyDown = gDown;
+
         // 退出优先于拍照：同一 tick 内两键同时按下时以退出为准
         boolean exitPressed = false;
         while (MCphoneKeyBindings.CAMERA_EXIT.consumeClick()) exitPressed = true;
@@ -58,6 +67,83 @@ public final class CameraHandler {
 
         while (MCphoneKeyBindings.CAMERA_SHUTTER.consumeClick()) {
             CameraMode.requestCapture();
+        }
+    }
+
+    /** 抓当前画面 → 缩到 128×128 → 对应地图调色板 → 送服务端写进满级地图 */
+    private static void exportMap(Minecraft mc) {
+        if (mc.player == null) return;
+        NativeImage img;
+        try {
+            img = Screenshot.takeScreenshot(mc.getMainRenderTarget());
+        } catch (Exception e) {
+            MCphone.LOGGER.error("导出地图画失败：截图失败", e);
+            return;
+        }
+        try (NativeImage im = img) {
+            byte[] colors = toMapColors(im);
+            PacketDistributor.sendToServer(new CloudPackets.MapArtUploadC2S(colors));
+            if (mc.player != null) {
+                mc.player.displayClientMessage(
+                        Component.literal("已导出地图画（满级地图），已放入背包"), true);
+            }
+        } catch (Exception e) {
+            MCphone.LOGGER.error("导出地图画失败", e);
+            if (mc.player != null) {
+                mc.player.displayClientMessage(
+                        Component.literal("导出地图画失败：" + e.getMessage()), true);
+            }
+        }
+    }
+
+    /** 缩放并把每个像素映射到最近的地图颜色（0-63 索引） */
+    private static byte[] toMapColors(NativeImage img) {
+        int[] base = mapColorBase();
+        if (base == null) return new byte[128 * 128];
+        byte[] out = new byte[128 * 128];
+        try (NativeImage small = new NativeImage(128, 128, true)) {
+            img.resizeSubRectTo(0, 0, img.getWidth(), img.getHeight(), small);
+            for (int y = 0; y < 128; y++) {
+                for (int x = 0; x < 128; x++) {
+                    int abgr = small.getPixelRGBA(x, y);
+                    int r = abgr & 0xFF;
+                    int g = (abgr >> 8) & 0xFF;
+                    int b = (abgr >> 16) & 0xFF;
+                    int best = 0;
+                    int bestD = Integer.MAX_VALUE;
+                    for (int i = 0; i < 64; i++) {
+                        int c = base[i];
+                        int dr = r - ((c >> 16) & 0xFF);
+                        int dg = g - ((c >> 8) & 0xFF);
+                        int db = b - (c & 0xFF);
+                        int d = dr * dr * 30 + dg * dg * 59 + db * db * 11;
+                        if (d < bestD) {
+                            bestD = d;
+                            best = i;
+                        }
+                    }
+                    out[y * 128 + x] = (byte) best;
+                }
+            }
+        }
+        return out;
+    }
+
+    /** MATERIAL_COLORS 是 private，反射取 64 色地圖調色板；取不到回 null */
+    private static int[] mapColorBase() {
+        try {
+            java.lang.reflect.Field f = MapColor.class.getDeclaredField("MATERIAL_COLORS");
+            f.setAccessible(true);
+            MapColor[] palette = (MapColor[]) f.get(null);
+            if (palette == null || palette.length != 64) return null;
+            int[] base = new int[64];
+            for (int i = 0; i < 64; i++) {
+                base[i] = palette[i].col;
+            }
+            return base;
+        } catch (Exception e) {
+            MCphone.LOGGER.error("讀取地圖調色板失敗", e);
+            return null;
         }
     }
 

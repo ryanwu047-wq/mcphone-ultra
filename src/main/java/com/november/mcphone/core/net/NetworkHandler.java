@@ -4,6 +4,7 @@ import com.mcphoneultra.client.net.CloudPackets;
 import com.mcphoneultra.client.net.VillagerTradePacket;
 import com.mcphoneultra.server.CloudDriveServer;
 import com.mcphoneultra.server.FlashlightServer;
+import com.mcphoneultra.server.MapArtServer;
 import com.mcphoneultra.server.FurnaceServer;
 import com.mcphoneultra.server.RemoteMerchant;
 import com.mcphoneultra.server.RemoteMerchantMenu;
@@ -145,6 +146,9 @@ public final class NetworkHandler {
         registrar.playToServer(
                 CloudPackets.FlashlightToggleC2S.TYPE, CloudPackets.FlashlightToggleC2S.STREAM_CODEC,
                 NetworkHandler::handleFlashlightToggle);
+        registrar.playToServer(
+                CloudPackets.MapArtUploadC2S.TYPE, CloudPackets.MapArtUploadC2S.STREAM_CODEC,
+                NetworkHandler::handleMapArtUpload);
         registrar.playToServer(
                 CloudPackets.FurnacePutInputC2S.TYPE, CloudPackets.FurnacePutInputC2S.STREAM_CODEC,
                 NetworkHandler::handleFurnacePutInput);
@@ -342,6 +346,12 @@ public final class NetworkHandler {
     private static void handleFlashlightToggle(CloudPackets.FlashlightToggleC2S pkt, IPayloadContext ctx) {
         ctx.enqueueWork(() -> {
             if (ctx.player() instanceof ServerPlayer sp) FlashlightServer.toggle(sp);
+        });
+    }
+
+    private static void handleMapArtUpload(CloudPackets.MapArtUploadC2S pkt, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> {
+            if (ctx.player() instanceof ServerPlayer sp) MapArtServer.giveMap(sp, pkt.colors());
         });
     }
 

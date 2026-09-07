@@ -69,7 +69,7 @@ public final class CameraOverlay {
 
     /** 常驻状态列：自拍当前值与操作键 */
     private static void renderStatus(GuiGraphics g, Font font, int w) {
-        String text = "自拍: " + (CameraMode.selfie ? "开（第三人称，鼠标调视角）" : "关") + "   [V]自拍";
+        String text = "自拍: " + (CameraMode.selfie ? "开（第三人称，鼠标调视角）" : "关") + "   [V]自拍 [G]导出地图画";
         int tw = font.width(text);
         int x = (w - tw) / 2;
         int y = 8;

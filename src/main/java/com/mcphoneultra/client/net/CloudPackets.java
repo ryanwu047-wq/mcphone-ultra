@@ -244,6 +244,33 @@ public final class CloudPackets {
         }
     }
 
+    /** 地圖畫上傳：128×128 地圖顏色索引（每格 0-63） */
+    public record MapArtUploadC2S(byte[] colors) implements CustomPacketPayload {
+        public static final Type<MapArtUploadC2S> TYPE = payloadType("mapart_upload");
+        public static final StreamCodec<RegistryFriendlyByteBuf, MapArtUploadC2S> STREAM_CODEC =
+                new StreamCodec<>() {
+                    @Override
+                    public MapArtUploadC2S decode(RegistryFriendlyByteBuf buf) {
+                        int n = buf.readUnsignedShort();
+                        if (n > 128 * 128) n = 128 * 128;
+                        byte[] b = new byte[n];
+                        buf.readBytes(b);
+                        return new MapArtUploadC2S(b);
+                    }
+
+                    @Override
+                    public void encode(RegistryFriendlyByteBuf buf, MapArtUploadC2S v) {
+                        buf.writeShort(v.colors.length);
+                        buf.writeBytes(v.colors);
+                    }
+                };
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
     public record FurnaceStateS2C(ItemStack input, ItemStack fuel, ItemStack output,
                                   int progress, int burnTicks, int speed) implements CustomPacketPayload {
         public static final Type<FurnaceStateS2C> TYPE = payloadType("furnace_state");
