@@ -30,21 +30,62 @@ public final class NotePrinter {
         return content == null || content.pages().isEmpty();
     }
 
-    /** 印一本；正文为空或没有空白书返回 false */
+    /** 最多 8 本：16000 字 ≈ 每本 2000 字（100 頁 × 14 行 × 9px）。超过直接截断，不无限印 */
+    public static final int MAX_BOOKS = 8;
+
+    /** 印一本或多本（超一本的量自动分本）；正文为空或空白书不够返回 false */
     public static boolean print(ServerPlayer player, Note note) {
         if (note.body().isBlank()) return false;
-        if (!COST.canAfford(player)) return false;
-        if (!COST.consume(player)) return false;
+        List<Filterable<String>> allPages = toPages(note.body());
 
-        ItemStack book = new ItemStack(Items.WRITABLE_BOOK);
-        book.set(DataComponents.WRITABLE_BOOK_CONTENT,
-                new WritableBookContent(toPages(note.body())));
+        int perBook = WritableBookContent.MAX_PAGES;
+        int books = Math.max(1, (allPages.size() + perBook - 1) / perBook);
+        books = Math.min(books, MAX_BOOKS);
 
-        // 背包满了就掉在脚下，而不是把书连同那本空白书一起吞掉
-        if (!player.getInventory().add(book)) {
-            player.drop(book, false);
+        int have = countBlankBooks(player);
+        if (have < books) {
+            player.sendSystemMessage(Component.translatable(
+                    "mcphone_ultra.notes.need_books", books));
+            return false;
+        }
+        consumeBlankBooks(player, books);
+
+        for (int b = 0; b < books; b++) {
+            int from = b * perBook;
+            int to = Math.min(allPages.size(), from + perBook);
+            ItemStack book = new ItemStack(Items.WRITABLE_BOOK);
+            book.set(DataComponents.WRITABLE_BOOK_CONTENT,
+                    new WritableBookContent(allPages.subList(from, to)));
+
+            // 背包满了就掉在脚下，而不是把书连同那本空白书一起吞掉
+            if (!player.getInventory().add(book)) {
+                player.drop(book, false);
+            }
         }
         return true;
+    }
+
+    /** 数背包里有几本空白书与笔 */
+    private static int countBlankBooks(ServerPlayer player) {
+        int n = 0;
+        var inv = player.getInventory();
+        for (int i = 0; i < inv.getContainerSize(); i++) {
+            if (isBlankBook(inv.getItem(i))) n++;
+        }
+        return n;
+    }
+
+    /** 从背包里按顺序扣掉 books 本空白书与笔 */
+    private static void consumeBlankBooks(ServerPlayer player, int books) {
+        var inv = player.getInventory();
+        for (int i = 0; i < inv.getContainerSize() && books > 0; i++) {
+            ItemStack s = inv.getItem(i);
+            if (isBlankBook(s)) {
+                int take = Math.min(books, s.getCount());
+                s.shrink(take);
+                books -= take;
+            }
+        }
     }
 
     // 原版书页按像素宽度折行、满 14 行翻页，不是按字符数切页
@@ -72,9 +113,6 @@ public final class NotePrinter {
         }
         if (!lines.isEmpty()) pages.add(String.join("\n", lines));
 
-        if (pages.size() > WritableBookContent.MAX_PAGES) {
-            pages = pages.subList(0, WritableBookContent.MAX_PAGES);
-        }
         return pages.stream().map(Filterable::passThrough).toList();
     }
 

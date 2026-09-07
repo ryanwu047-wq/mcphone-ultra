@@ -5,7 +5,6 @@ import com.november.mcphone.core.ModAttachments;
 import com.november.mcphone.core.ModCreativeTabs;
 import com.november.mcphone.core.ModDataComponents;
 import com.november.mcphone.core.PhoneItem;
-import com.november.mcphone.core.TabletItem;
 import net.minecraft.world.item.Rarity;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -31,9 +30,6 @@ public class MCphone {
     public static final DeferredItem<PhoneItem> PHONE = ITEMS.registerItem("phone",
             props -> new PhoneItem(props.stacksTo(1).rarity(Rarity.RARE)));
 
-    /** 平板：手机的放大版，合成比手机难得多 */
-    public static final DeferredItem<TabletItem> TABLET = ITEMS.registerItem("tablet",
-            props -> new TabletItem(props.stacksTo(1).rarity(Rarity.EPIC)));
 
     public MCphone(IEventBus modEventBus, ModContainer modContainer) {
         ITEMS.register(modEventBus);
@@ -63,6 +59,14 @@ public class MCphone {
         // Ultra 隨身熔爐：每 tick 燒煉（只對開著熔爐 App 的玩家）
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
                 com.mcphoneultra.server.FurnaceServer::onServerTick);
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
+                com.mcphoneultra.server.FurnaceServer::onPlayerLoggedOut);
+
+        // Ultra 手電筒：每 tick 跟隨玩家頭頂光源，登出還原
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
+                com.mcphoneultra.server.FlashlightServer::onServerTick);
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
+                com.mcphoneultra.server.FlashlightServer::onPlayerLoggedOut);
 
         // Ultra 鬧鐘：客戶端 tick 檢查到點（手機關著也響）
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(

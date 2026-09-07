@@ -674,10 +674,6 @@ public final class PhoneScreen extends Screen {
                 Component.translatable("mcphone_ultra.settings.brightness").getString(),
                 () -> navigateTo(Mode.ULTRA_DISPLAY),
                 com.mcphoneultra.client.util.UltraDisplay::brightnessLabel));
-        settingItems.add(new SettingsList.Item(
-                Component.translatable("mcphone_ultra.settings.color_blind").getString(),
-                () -> navigateTo(Mode.ULTRA_DISPLAY),
-                com.mcphoneultra.client.util.UltraDisplay::colorBlindLabel));
 
         settingsList.setItems(settingItems);
     }

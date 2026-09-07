@@ -40,8 +40,11 @@ com.mcphoneultra.client.app.FurnaceApp
 com.mcphoneultra.client.app.CompassApp
 com.mcphoneultra.client.app.CraftingApp
 com.mcphoneultra.client.app.EnchantApp
-com.mcphoneultra.client.app.TabletApp
 com.mcphoneultra.client.app.MailboxApp
 com.mcphoneultra.client.app.AlarmApp
 com.mcphoneultra.client.app.MapApp
 com.mcphoneultra.client.app.PhoneApp
+com.mcphoneultra.client.app.SmithingApp
+com.mcphoneultra.client.app.CartographyApp
+com.mcphoneultra.client.app.GrindstoneApp
+com.mcphoneultra.client.app.FlashlightApp

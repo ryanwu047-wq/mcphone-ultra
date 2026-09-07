@@ -10,6 +10,7 @@ import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.SingleRecipeInput;
 import net.minecraft.tags.ItemTags;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -42,9 +43,13 @@ public final class FurnaceServer {
     }
 
     public static void open(ServerPlayer p) {
-        State st = new State();
+        // 真實熔爐行為：重開介面時保留上一次的內容與進度，繼續燒
+        State st = states.get(p.getUUID());
+        if (st == null) {
+            st = new State();
+            states.put(p.getUUID(), st);
+        }
         st.speed = CloudDriveData.get(p.serverLevel()).tierOf(p).furnaceSpeed();
-        states.put(p.getUUID(), st);
         send(p);
     }
 
@@ -99,9 +104,16 @@ public final class FurnaceServer {
     }
 
     public static void close(ServerPlayer p) {
+        // 真實熔爐：關閉介面不還物品、不複製——東西留在熔爐裡，重開還在
+        State st = states.get(p.getUUID());
+        if (st == null) return;
+        p.inventoryMenu.broadcastChanges();
+    }
+
+    /** 玩家登出/斷線時才把殘留物還給玩家：否則伺服器重啟會憑空消失 */
+    public static void closeAndGiveBack(ServerPlayer p) {
         State st = states.remove(p.getUUID());
         if (st == null) return;
-        // 剩餘物品還給玩家
         giveBack(p, st.input);
         giveBack(p, st.fuel);
         giveBack(p, st.output);
@@ -114,6 +126,12 @@ public final class FurnaceServer {
         if (left > 0) {
             p.drop(new ItemStack(stack.getItem(), left), false);
         }
+    }
+
+    /** 玩家登出時強制歸還物品：斷線/關服不走 close 路徑，狀態留在 map 會憑空消失 */
+    @SubscribeEvent
+    public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
+        if (event.getEntity() instanceof ServerPlayer sp) closeAndGiveBack(sp);
     }
 
     /** 每 tick 推進所有在線熔爐，每 5 tick 同步一次 */

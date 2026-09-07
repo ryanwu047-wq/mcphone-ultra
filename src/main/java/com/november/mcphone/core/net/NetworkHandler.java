@@ -3,6 +3,7 @@ package com.november.mcphone.core.net;
 import com.mcphoneultra.client.net.CloudPackets;
 import com.mcphoneultra.client.net.VillagerTradePacket;
 import com.mcphoneultra.server.CloudDriveServer;
+import com.mcphoneultra.server.FlashlightServer;
 import com.mcphoneultra.server.FurnaceServer;
 import com.mcphoneultra.server.RemoteMerchant;
 import com.mcphoneultra.server.RemoteMerchantMenu;
@@ -132,6 +133,18 @@ public final class NetworkHandler {
         registrar.playToServer(
                 CloudPackets.EnchantOpenC2S.TYPE, CloudPackets.EnchantOpenC2S.STREAM_CODEC,
                 NetworkHandler::handleEnchantOpen);
+        registrar.playToServer(
+                CloudPackets.SmithingOpenC2S.TYPE, CloudPackets.SmithingOpenC2S.STREAM_CODEC,
+                NetworkHandler::handleSmithingOpen);
+        registrar.playToServer(
+                CloudPackets.CartographyOpenC2S.TYPE, CloudPackets.CartographyOpenC2S.STREAM_CODEC,
+                NetworkHandler::handleCartographyOpen);
+        registrar.playToServer(
+                CloudPackets.GrindstoneOpenC2S.TYPE, CloudPackets.GrindstoneOpenC2S.STREAM_CODEC,
+                NetworkHandler::handleGrindstoneOpen);
+        registrar.playToServer(
+                CloudPackets.FlashlightToggleC2S.TYPE, CloudPackets.FlashlightToggleC2S.STREAM_CODEC,
+                NetworkHandler::handleFlashlightToggle);
         registrar.playToServer(
                 CloudPackets.FurnacePutInputC2S.TYPE, CloudPackets.FurnacePutInputC2S.STREAM_CODEC,
                 NetworkHandler::handleFurnacePutInput);
@@ -305,6 +318,30 @@ public final class NetworkHandler {
     private static void handleEnchantOpen(CloudPackets.EnchantOpenC2S pkt, IPayloadContext ctx) {
         ctx.enqueueWork(() -> {
             if (ctx.player() instanceof ServerPlayer sp) CloudDriveServer.openEnchant(sp);
+        });
+    }
+
+    private static void handleSmithingOpen(CloudPackets.SmithingOpenC2S pkt, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> {
+            if (ctx.player() instanceof ServerPlayer sp) CloudDriveServer.openSmithing(sp);
+        });
+    }
+
+    private static void handleCartographyOpen(CloudPackets.CartographyOpenC2S pkt, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> {
+            if (ctx.player() instanceof ServerPlayer sp) CloudDriveServer.openCartography(sp);
+        });
+    }
+
+    private static void handleGrindstoneOpen(CloudPackets.GrindstoneOpenC2S pkt, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> {
+            if (ctx.player() instanceof ServerPlayer sp) CloudDriveServer.openGrindstone(sp);
+        });
+    }
+
+    private static void handleFlashlightToggle(CloudPackets.FlashlightToggleC2S pkt, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> {
+            if (ctx.player() instanceof ServerPlayer sp) FlashlightServer.toggle(sp);
         });
     }
 

@@ -15,7 +15,8 @@ import net.minecraft.network.codec.StreamCodec;
 public record Note(int id, String body, long modified) {
 
     /** 正文长度上限，编解码器层面封死，超长包在解码阶段就拒收 */
-    public static final int MAX_BODY_LENGTH = 2000;
+    /** 單條筆記字數上限：原版 2000（約一本書），Ultra 調到 16000（約 8 本書） */
+    public static final int MAX_BODY_LENGTH = 16000;
 
     public static final Codec<Note> CODEC = RecordCodecBuilder.create(instance ->
             instance.group(

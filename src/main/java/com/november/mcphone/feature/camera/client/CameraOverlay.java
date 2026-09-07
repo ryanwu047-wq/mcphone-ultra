@@ -38,6 +38,7 @@ public final class CameraOverlay {
 
     public static void render(GuiGraphics g, Font font, int w, int h, long nowMs) {
         renderViewfinder(g, w, h);
+        renderStatus(g, font, w);
         renderHint(g, font, w, h, nowMs);
         renderFlash(g, w, h, nowMs);
     }
@@ -64,6 +65,16 @@ public final class CameraOverlay {
         g.fill(cx + 2, cy, cx + RETICLE_ARM + 1, cy + 1, COLOR_RETICLE);
         g.fill(cx, cy - RETICLE_ARM, cx + 1, cy - 1, COLOR_RETICLE);
         g.fill(cx, cy + 2, cx + 1, cy + RETICLE_ARM + 1, COLOR_RETICLE);
+    }
+
+    /** 常驻状态列：自拍当前值与操作键 */
+    private static void renderStatus(GuiGraphics g, Font font, int w) {
+        String text = "自拍: " + (CameraMode.selfie ? "开（第三人称，鼠标调视角）" : "关") + "   [V]自拍";
+        int tw = font.width(text);
+        int x = (w - tw) / 2;
+        int y = 8;
+        g.fill(x - 4, y - 3, x + tw + 4, y + font.lineHeight + 2, 0xAA000000);
+        g.drawString(font, text, x, y, 0xFFFFFFFF, false);
     }
 
     private static void renderHint(GuiGraphics g, Font font, int w, int h, long nowMs) {

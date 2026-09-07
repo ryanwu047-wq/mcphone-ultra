@@ -162,7 +162,7 @@ public final class CloudDriveServer {
     public static void openCraft(ServerPlayer p) {
         if (!phoneCheck(p)) return;
         p.openMenu(new SimpleMenuProvider(
-                (id, inv, pl) -> new CraftingMenu(id, inv,
+                (id, inv, pl) -> new UltraCraftingMenu(id, inv,
                         ContainerLevelAccess.create(p.serverLevel(), p.blockPosition())),
                 Component.translatable("container.crafting")));
     }
@@ -180,6 +180,30 @@ public final class CloudDriveServer {
                 (id, inv, pl) -> new UltraEnchantMenu(id, inv,
                         ContainerLevelAccess.create(p.serverLevel(), p.blockPosition()), books),
                 Component.translatable("container.enchant")));
+    }
+
+    public static void openSmithing(ServerPlayer p) {
+        if (!phoneCheck(p)) return;
+        p.openMenu(new SimpleMenuProvider(
+                (id, inv, pl) -> new UltraSmithingMenu(id, inv,
+                        ContainerLevelAccess.create(p.serverLevel(), p.blockPosition())),
+                Component.translatable("container.smithing")));
+    }
+
+    public static void openCartography(ServerPlayer p) {
+        if (!phoneCheck(p)) return;
+        p.openMenu(new SimpleMenuProvider(
+                (id, inv, pl) -> new UltraCartographyMenu(id, inv,
+                        ContainerLevelAccess.create(p.serverLevel(), p.blockPosition())),
+                Component.translatable("container.cartography_table")));
+    }
+
+    public static void openGrindstone(ServerPlayer p) {
+        if (!phoneCheck(p)) return;
+        p.openMenu(new SimpleMenuProvider(
+                (id, inv, pl) -> new UltraGrindstoneMenu(id, inv,
+                        ContainerLevelAccess.create(p.serverLevel(), p.blockPosition())),
+                Component.translatable("container.grindstone_title")));
     }
 
     private static boolean phoneCheck(ServerPlayer p) {

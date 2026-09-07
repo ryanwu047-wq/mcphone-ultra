@@ -58,6 +58,12 @@ public final class FurnaceApp extends BaseApp {
         @Override
         public void onClose() {
             PacketDistributor.sendToServer(new CloudPackets.FurnaceCloseC2S());
+            // 清空本地殘留，避免關機畫面殘影造成「複製一份」錯覺
+            in = ItemStack.EMPTY;
+            fuel = ItemStack.EMPTY;
+            out = ItemStack.EMPTY;
+            progress = 0;
+            burn = 0;
         }
 
         @Override

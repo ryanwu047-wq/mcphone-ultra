@@ -4,23 +4,39 @@ import com.mcphoneultra.MCphoneUltra;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.UUID;
 
 /**
  * ☎ 電話＝Simple Voice Chat 語音群組：
- * 撥號＝建立一個「電話-&lt;玩家名&gt;」群組（建群者自動加入），對方在遊戲內
+ * 撥號＝建立一個「電話-<玩家名>」群組（建群者自動加入），對方在遊戲內
  * 按 U 加入同名群組即可語音通話；掛斷＝移除該群組。
- * 全程反射，沒裝 SVC 時 serverApi 為 null，只提示不崩潰。
+ *
+ * 全程反射且不引用任何 voicechat 類型的【類簽名】——UltraVoicePlugin 的
+ * 類簽名含 voicechat API 類型，沒裝 SVC 時一載入就 NoClassDefFoundError；
+ * 這裡改用 Class.forName + 反射欄位，類簽名乾乾淨淨，沒裝 SVC 只返回
+ * null／提示，不崩潰。
  */
 public final class VoiceCall {
 
     private VoiceCall() {
     }
 
+    /** 反射讀 UltraVoicePlugin.serverApi：SVC 在場才有值 */
+    private static Object serverApi() {
+        try {
+            Class<?> c = Class.forName("com.mcphoneultra.server.UltraVoicePlugin");
+            Field f = c.getField("serverApi");
+            return f.get(null);
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
     public static boolean svcAvailable() {
-        return UltraVoicePlugin.serverApi != null;
+        return serverApi() != null;
     }
 
     public static String groupName(ServerPlayer player) {
@@ -29,7 +45,7 @@ public final class VoiceCall {
 
     /** 撥號：建立群組並通知目標玩家 */
     public static void call(ServerPlayer caller, String targetName) {
-        Object api = UltraVoicePlugin.serverApi;
+        Object api = serverApi();
         if (api == null) {
             caller.sendSystemMessage(Component.literal("☎ 未安裝 Simple Voice Chat（語音 mod），電話無法使用"));
             return;
@@ -60,7 +76,7 @@ public final class VoiceCall {
 
     /** 掛斷：移除自己的群組 */
     public static void hangup(ServerPlayer player) {
-        Object api = UltraVoicePlugin.serverApi;
+        Object api = serverApi();
         if (api == null) {
             player.sendSystemMessage(Component.literal("☎ 未安裝 Simple Voice Chat"));
             return;

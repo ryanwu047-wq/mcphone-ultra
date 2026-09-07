@@ -3,6 +3,7 @@ package com.mcphoneultra.server;
 import net.minecraft.util.Mth;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.EnchantmentMenu;
 
@@ -29,6 +30,11 @@ public final class UltraEnchantMenu extends EnchantmentMenu {
             this.costs[2] = this.enchantClue[2];
         this.levelClue[2] = this.enchantClue[2];
         }
+    }
+
+    @Override
+    public boolean stillValid(Player player) {
+        return true;
     }
 
     @Override

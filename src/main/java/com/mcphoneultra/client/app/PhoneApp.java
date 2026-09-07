@@ -25,6 +25,19 @@ public final class PhoneApp extends BaseApp {
     }
 
     private static final class PhonePage extends ClickablePage {
+        /** 語音可用性快取：每幀反射探測太貴，也避免沒裝 SVC 時反覆嘗試載入 */
+        private static Boolean svcCache;
+
+        private static boolean svc() {
+            if (svcCache != null) return svcCache;
+            try {
+                svcCache = VoiceCall.svcAvailable();
+            } catch (Throwable t) {
+                svcCache = false;
+            }
+            return svcCache;
+        }
+
         private String target = "";
         private boolean typing;
         private String toast = "";
@@ -44,7 +57,7 @@ public final class PhoneApp extends BaseApp {
             Ui.textClipped(c, "☎ 電話", x + 3, y + 2, s.titleColor(), x, y, w, 12);
             Ui.hline(g, x, x + w, y + 11, s.buttonDisabledColor());
 
-            boolean svc = VoiceCall.svcAvailable();
+            boolean svc = svc();
             Ui.drawCentered(c, svc ? "語音已連線（Simple Voice Chat）" : "未安裝 Simple Voice Chat",
                     x, y + 16, w, 12, svc ? s.accentColor() : s.buttonDisabledColor());
             Ui.drawCentered(c, "撥號＝建立語音群組，對方按 U 加入即通話",

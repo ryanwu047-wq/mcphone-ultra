@@ -196,6 +196,54 @@ public final class CloudPackets {
     // ---- S2C ----
 
     /** 熔爐狀態（手機內 UI） */
+    /** 開隨身鍛造台 */
+    public record SmithingOpenC2S() implements CustomPacketPayload {
+        public static final Type<SmithingOpenC2S> TYPE = payloadType("smithing_open");
+        public static final StreamCodec<RegistryFriendlyByteBuf, SmithingOpenC2S> STREAM_CODEC =
+                StreamCodec.unit(new SmithingOpenC2S());
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    /** 開隨身製圖台 */
+    public record CartographyOpenC2S() implements CustomPacketPayload {
+        public static final Type<CartographyOpenC2S> TYPE = payloadType("cartography_open");
+        public static final StreamCodec<RegistryFriendlyByteBuf, CartographyOpenC2S> STREAM_CODEC =
+                StreamCodec.unit(new CartographyOpenC2S());
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    /** 開隨身砂輪 */
+    public record GrindstoneOpenC2S() implements CustomPacketPayload {
+        public static final Type<GrindstoneOpenC2S> TYPE = payloadType("grindstone_open");
+        public static final StreamCodec<RegistryFriendlyByteBuf, GrindstoneOpenC2S> STREAM_CODEC =
+                StreamCodec.unit(new GrindstoneOpenC2S());
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    /** 手電筒開關 */
+    public record FlashlightToggleC2S() implements CustomPacketPayload {
+        public static final Type<FlashlightToggleC2S> TYPE = payloadType("flashlight_toggle");
+        public static final StreamCodec<RegistryFriendlyByteBuf, FlashlightToggleC2S> STREAM_CODEC =
+                StreamCodec.unit(new FlashlightToggleC2S());
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
     public record FurnaceStateS2C(ItemStack input, ItemStack fuel, ItemStack output,
                                   int progress, int burnTicks, int speed) implements CustomPacketPayload {
         public static final Type<FurnaceStateS2C> TYPE = payloadType("furnace_state");

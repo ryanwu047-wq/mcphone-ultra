@@ -9,7 +9,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 
 /**
- * 顯示輔助設定頁：亮度滑桿＋色盲補助選項（mcphone-ultra 內建）。
+ * 顯示輔助設定頁：亮度滑桿（mcphone-ultra 內建）。
  * 從「設定」點進來，改完即時生效，按返回回到設定列表。
  */
 public final class UltraDisplayPage {
@@ -57,33 +57,7 @@ public final class UltraDisplayPage {
             applyBrightness(mouseX);
         }
 
-        y += 13;
-
-        // —— 色盲補助 ——
-        g.drawString(font, "🎨 色盲補助：" + UltraDisplay.colorBlindLabel(),
-                x + 2, y, FontPalette.body(), false);
-        y += font.lineHeight + 3;
-
-        String[] ids = { "NONE", "PROTANOPIA", "DEUTERANOPIA", "TRITANOPIA", "MONOCHROME" };
-        String[] names = { "關閉", "紅弱", "綠弱", "藍黃弱", "灰階" };
-        int[] bg = {
-                PhoneTheme.COLOR_BUTTON_DISABLED, 0xFF2A4A5A, 0xFF4A2A5A, 0xFF4A422A, 0xFF3A3A3A
-        };
-
-        int bw = (w - 4 * 3) / 5;
-        for (int i = 0; i < 5; i++) {
-            int bx = x + 2 + i * (bw + 3);
-            boolean active = UltraDisplay.colorBlind().name().equals(ids[i]);
-            if (mouseX >= bx && mouseX <= bx + bw && mouseY >= y && mouseY <= y + 16) {
-                applyColorBlind(UltraDisplay.ColorBlindMode.valueOf(ids[i]));
-            }
-            g.fill(bx, y, bx + bw, y + 16, active ? PhoneTheme.COLOR_MUSIC_PROGRESS : bg[i]);
-            String label = names[i];
-            g.drawString(font, label, bx + (bw - font.width(label)) / 2, y + 4,
-                    active ? FontPalette.title() : FontPalette.body(), false);
-        }
-
-        y += 22;
+        y += 18;
 
         g.drawString(font, "即時生效，存在本機 config；返回鍵（◀）離開。",
                 x + 2, y, FontPalette.subtle(), false);
@@ -91,13 +65,8 @@ public final class UltraDisplayPage {
 
     private void applyBrightness(double mouseX) {
         float v = (float) Math.clamp((mouseX - barLeft) / (double) barWidth, 0.0, 1.0);
-        UltraDisplay.set(v, UltraDisplay.colorBlind());
+        UltraDisplay.set(v);
         ClientConfig.saveBrightness(v);
-    }
-
-    private void applyColorBlind(UltraDisplay.ColorBlindMode mode) {
-        UltraDisplay.set(UltraDisplay.brightness(), mode);
-        ClientConfig.saveColorBlind(mode);
     }
 
     /** 滑桿在 render 裡即時處理；這裡一律吞掉點擊，返回交給導航欄 */

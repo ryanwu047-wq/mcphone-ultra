@@ -1,5 +1,6 @@
 package com.november.mcphone.feature.camera.client;
 
+import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 
 /**
@@ -8,6 +9,9 @@ import net.minecraft.client.Minecraft;
  * 拍照要分帧，否则取景框会被拍进照片：按键置 pendingCapture → 渲染帧跳过取景框并置
  * cleanFrameReady → 下一 tick 抓取（期间的每一帧都被抑制，抓到的必然干净）。
  * 抓取放在 tick 而不是渲染中：Screenshot.grab 会 bindTexture 动 RenderSystem，与原版 F2 时机一致。
+ *
+ * Ultra 扩展：自拍＝切到第三人称背后视角并【保持】，玩家自己用鼠标调整视角，
+ * 调好了再按快门，拍到的就是当前视角（能看到自己）。关闭自拍时还原第一人称。
  */
 public final class CameraMode {
 
@@ -24,6 +28,10 @@ public final class CameraMode {
     /** 最近一次拍照完成的时刻，用于白闪 */
     private static long flashAtMs = 0L;
 
+    /** 自拍：保持第三人称背后视角，玩家自由调整后再拍 */
+    public static boolean selfie = false;
+    private static CameraType savedCameraType = null;
+
     private CameraMode() {}
 
     public static boolean isActive() { return active; }
@@ -38,16 +46,26 @@ public final class CameraMode {
         enteredAtMs = System.currentTimeMillis();
         pendingCapture = false;
         cleanFrameReady = false;
+        savedCameraType = null;
+        if (selfie) {
+            savedCameraType = mc.options.getCameraType();
+            mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
+        }
     }
 
     public static void exit() {
         if (!active) return;
 
         // 还原而不是无脑置 false：玩家可能本来就自己按了 F1
-        Minecraft.getInstance().options.hideGui = savedHideGui;
+        Minecraft mc = Minecraft.getInstance();
+        mc.options.hideGui = savedHideGui;
         active = false;
         pendingCapture = false;
         cleanFrameReady = false;
+        if (savedCameraType != null) {
+            mc.options.setCameraType(savedCameraType);
+            savedCameraType = null;
+        }
     }
 
     public static void requestCapture() {
@@ -71,6 +89,19 @@ public final class CameraMode {
         pendingCapture = false;
         cleanFrameReady = false;
         flashAtMs = System.currentTimeMillis();
+    }
+
+    /** 切换自拍：开＝切第三人称背后并保持；关＝还原第一人称 */
+    public static void toggleSelfie() {
+        Minecraft mc = Minecraft.getInstance();
+        selfie = !selfie;
+        if (selfie) {
+            savedCameraType = mc.options.getCameraType();
+            mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
+        } else if (savedCameraType != null) {
+            mc.options.setCameraType(savedCameraType);
+            savedCameraType = null;
+        }
     }
 
     public static long getEnteredAtMs() { return enteredAtMs; }

@@ -254,6 +254,8 @@ dependencies {
     localRuntime 'org.graalvm.js:js:23.0.13.1'
     localRuntime 'org.graalvm.js:js-scriptengine:23.0.13.1'
     localRuntime 'org.graalvm.sdk:graal-sdk:23.0.13.1'
+    // 双保险：implementation 让 dev 的 runClient 一定有 javamp3（实测 localRuntime 有时不进 devlaunch classpath）
+    implementation 'fr.delthas:javamp3:1.0.1'
     localRuntime 'fr.delthas:javamp3:1.0.1'
     localRuntime 'org.apache.commons:commons-compress:1.26.0'
     localRuntime 'org.tukaani:xz:1.10'

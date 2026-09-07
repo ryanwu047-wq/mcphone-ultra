@@ -48,9 +48,6 @@ public final class ClientConfig {
     /** 手机屏幕亮度（0-100）。由 mcphone-ultra 的「设置 → 显示辅助」调整 */
     public static final ModConfigSpec.IntValue BRIGHTNESS;
 
-    /** 色盲辅助滤镜。由 mcphone-ultra 的「设置 → 显示辅助」调整 */
-    public static final ModConfigSpec.EnumValue<com.mcphoneultra.client.util.UltraDisplay.ColorBlindMode> COLOR_BLIND;
-
     static {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
 
@@ -81,11 +78,6 @@ public final class ClientConfig {
                 .translation("mcphone_ultra.config.brightness")
                 .defineInRange("brightness", 100, 0, 100);
 
-        COLOR_BLIND = builder
-                .comment("色盲辅助滤镜：NONE / PROTANOPIA / DEUTERANOPIA / TRITANOPIA / MONOCHROME",
-                        "Color-blind assist filter for the phone screen.")
-                .translation("mcphone_ultra.config.color_blind")
-                .defineEnum("colorBlind", com.mcphoneultra.client.util.UltraDisplay.ColorBlindMode.NONE);
 
         SPEC = builder.build();
     }
@@ -117,9 +109,9 @@ public final class ClientConfig {
         MusicController.setMode(MUSIC_MODE.get());
         LocalPlayback.setVolume(MUSIC_VOLUME.get() / 100.0F);
 
-        // 显示辅助：亮度与色盲滤镜推给渲染用的静态状态
+        // 显示辅助：亮度推给渲染用的静态状态
         com.mcphoneultra.client.util.UltraDisplay.set(
-                BRIGHTNESS.get() / 100.0F, COLOR_BLIND.get());
+                BRIGHTNESS.get() / 100.0F);
     }
 
     //  手机界面 → 配置
@@ -177,10 +169,4 @@ public final class ClientConfig {
         SPEC.save();
     }
 
-    /** 玩家在「设置 → 显示辅助」里换了色盲滤镜 */
-    public static void saveColorBlind(com.mcphoneultra.client.util.UltraDisplay.ColorBlindMode mode) {
-        if (!SPEC.isLoaded()) return;
-        COLOR_BLIND.set(mode);
-        SPEC.save();
-    }
 }
