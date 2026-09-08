@@ -56,3 +56,5 @@ repo/
 **/docs/wallpapers/
 
 ### Dev run dir ###\nrun/
+### 遊戲運行 log（不入庫） ###
+runclient*.log
