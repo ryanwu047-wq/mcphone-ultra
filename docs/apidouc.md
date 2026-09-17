@@ -40,16 +40,16 @@ public final class UltraAppPrices implements IAppPriceProvider {
         // 複製 App：每次複製消耗 64 鑽石
         out.put(ultra("copy"), ICost.of(Items.DIAMOND, 64));
 
-        // 商店其他可下載 App：不同 App 不同價格（鑽石）
-        out.put(ultra("phone"), ICost.of(Items.DIAMOND, 48));       // 語音群組通話
-        out.put(ultra("mailbox"), ICost.of(Items.DIAMOND, 32));     // 好友寄信與物品
-        out.put(ultra("starshooter"), ICost.of(Items.DIAMOND, 32)); // STG 小遊戲
-        out.put(ultra("memory"), ICost.of(Items.DIAMOND, 24));      // 記憶配對
-        out.put(ultra("tetris"), ICost.of(Items.DIAMOND, 24));      // 下落方塊
-        out.put(ultra("alarm"), ICost.of(Items.DIAMOND, 16));       // 真實時間提醒
-        out.put(ultra("flashlight"), ICost.of(Items.DIAMOND, 16));  // 手電筒
-        out.put(ultra("splash"), ICost.of(Items.DIAMOND, 8));       // 開機問候卡
-        out.put(ultra("lucky"), ICost.of(Items.DIAMOND, 8));        // 搖一搖骰子
+        // 商店其他可下載 App：不同 App 不同價格，混用不同物品
+        out.put(ultra("phone"), ICost.of(Items.EMERALD, 24));       // 語音群組通話 —— 24 綠寶石
+        out.put(ultra("mailbox"), ICost.of(Items.EMERALD, 16));     // 好友寄信與物品 —— 16 綠寶石
+        out.put(ultra("starshooter"), ICost.of(Items.GOLD_INGOT, 8));   // STG 小遊戲 —— 8 金錠
+        out.put(ultra("memory"), ICost.of(Items.ENDER_PEARL, 8));   // 記憶配對 —— 8 終界珍珠
+        out.put(ultra("tetris"), ICost.of(Items.GOLD_INGOT, 4));    // 下落方塊 —— 4 金錠
+        out.put(ultra("alarm"), ICost.of(Items.IRON_INGOT, 8));     // 真實時間提醒 —— 8 鐵錠
+        out.put(ultra("flashlight"), ICost.of(Items.IRON_INGOT, 4));    // 手電筒 —— 4 鐵錠
+        out.put(ultra("splash"), ICost.of(Items.EMERALD, 2));       // 開機問候卡 —— 2 綠寶石
+        out.put(ultra("lucky"), ICost.of(Items.GOLD_INGOT, 2));     // 搖一搖骰子 —— 2 金錠
 
         return out;
     }
@@ -67,6 +67,7 @@ SPI 註冊（文件放 `src/main/resources/META-INF/services/`）：
 要點：
 
 - `ICost.of(ItemLike, int)` 就是「N 個某物品」的價錢；`ICost.emc(long)` 是 EMC，`ICost.FREE` 是免費。
+  每個 App 可以收**不同物品**（鑽石、綠寶石、金錠、鐵錠、終界珍珠…），任意原版/模組物品都能當價錢。
 - **id 必須與 `IPhoneApp.getId()` 完全一致**（含命名空間），否則對不上價。
 - **`isPreinstalled() == false` 的 App 才會進商店販售**；預裝 App 在商店顯示「已安裝」，價格不生效。
 - 購買由 MCphone 內建處理（客戶端發包、服務端核對 `canAfford` 並真扣），你只需要報價。
