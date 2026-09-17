@@ -335,5 +335,7 @@
     "mcphone_ultra.app.map":  "探索地圖",
     "mcphone_ultra.app.map.desc":  "記錄走過的地形，A* 找最平的路",
     "mcphone_ultra.app.phone":  "電話",
-    "mcphone_ultra.app.phone.desc":  "Simple Voice Chat 語音群組通話"
+    "mcphone_ultra.app.phone.desc":  "Simple Voice Chat 語音群組通話",
+    "mcphone_ultra.app.copy":  "複製",
+    "mcphone_ultra.app.copy.desc":  "消耗 64 鑽石複製副手物品（含 NBT，NBT 不可大於 5KB）"
 }

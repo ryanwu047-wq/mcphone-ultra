@@ -335,5 +335,7 @@
     "mcphone_ultra.app.map":  "Explore Map",
     "mcphone_ultra.app.map.desc":  "Record explored terrain, A* pathfinding",
     "mcphone_ultra.app.phone":  "Phone",
-    "mcphone_ultra.app.phone.desc":  "Voice chat group calls"
+    "mcphone_ultra.app.phone.desc":  "Voice chat group calls",
+    "mcphone_ultra.app.copy":  "Copy",
+    "mcphone_ultra.app.copy.desc":  "Copy offhand item for 64 diamonds (NBT <= 5KB)"
 }
